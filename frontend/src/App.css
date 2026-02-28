@@ -340,13 +340,7 @@ body::before {
 
 /* ===== WIDGET ===== */
 .bet-widget {
-  background: rgba(22, 18, 32, 0.8);
-  backdrop-filter: blur(12px);
-  border-radius: 20px;
-  padding: 24px;
-  box-shadow: 0 8px 40px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.06);
-  border: 1px solid rgba(255,255,255,0.06);
-  max-width: 580px;
+  max-width: 900px;
   width: 100%;
   animation: fadeSlideUp 0.4s ease-out;
 }
@@ -2245,7 +2239,36 @@ body::before {
   color: #a78bfa;
 }
 
-.view-content {
+/* Persistent header card (always visible in ready state) */
+.widget-top {
+  background: rgba(22, 18, 32, 0.8);
+  backdrop-filter: blur(12px);
+  border-radius: 16px;
+  padding: 20px;
+  border: 1px solid rgba(255,255,255,0.06);
+  box-shadow: 0 8px 40px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.06);
+  margin-bottom: 16px;
+}
+
+.widget-top .balance-bar {
+  margin-bottom: 0;
+}
+
+/* Card-style views (bet, wallet, admin) */
+.view-card {
+  background: rgba(22, 18, 32, 0.8);
+  backdrop-filter: blur(12px);
+  border-radius: 16px;
+  padding: 20px;
+  border: 1px solid rgba(255,255,255,0.06);
+  box-shadow: 0 8px 40px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.06);
+  max-width: 580px;
+  margin: 0 auto;
+  animation: fadeSlideUp 0.2s ease-out;
+}
+
+/* Browse view — no card, full width */
+.view-browse {
   animation: fadeSlideUp 0.2s ease-out;
 }
 
@@ -2278,4 +2301,6 @@ body::before {
   .my-bets-info { width: 100%; justify-content: flex-start; flex-wrap: wrap; }
   .balance-bar { font-size: 11px; gap: 6px; padding: 6px 10px; flex-wrap: wrap; }
   .bar-btn { font-size: 10px; padding: 3px 8px; }
+  .widget-top { padding: 14px; border-radius: 14px; }
+  .view-card { padding: 16px; border-radius: 14px; max-width: 100%; }
 }

@@ -443,13 +443,15 @@ export function BetWidget({ provider, account, initialMarket }: BetWidgetProps) 
   if (setupStep === "loading") {
     return (
       <div className="bet-widget">
-        <div className="widget-header">
-          <h2>SHADOWBET</h2>
-          <span className="privacy-badge">PRIVACY</span>
-        </div>
-        <div className="connect-prompt">
-          <span className="spinner" />
-          <p>Initializing privacy engine...</p>
+        <div className="view-card">
+          <div className="widget-header">
+            <h2>SHADOWBET</h2>
+            <span className="privacy-badge">PRIVACY</span>
+          </div>
+          <div className="connect-prompt">
+            <span className="spinner" />
+            <p>Initializing privacy engine...</p>
+          </div>
         </div>
       </div>
     );
@@ -458,27 +460,29 @@ export function BetWidget({ provider, account, initialMarket }: BetWidgetProps) 
   if (setupStep === "create") {
     return (
       <div className="bet-widget">
-        <div className="widget-header">
-          <h2>SHADOWBET</h2>
-          <span className="privacy-badge">PRIVACY</span>
+        <div className="view-card">
+          <div className="widget-header">
+            <h2>SHADOWBET</h2>
+            <span className="privacy-badge">PRIVACY</span>
+          </div>
+          <div className="connect-prompt">
+            <h3>Setup Private Wallet</h3>
+            <p>Create an Unlink private account to make anonymous bets on Monad.</p>
+            <button className="connect-btn large" onClick={handleSetupWallet} disabled={isLoading}>
+              {isLoading ? <><span className="spinner" />Setting up...</> : "Create Private Wallet"}
+            </button>
+            {mnemonic && (
+              <div className="mnemonic-box">
+                <p className="mnemonic-label">Back up your recovery phrase:</p>
+                <code className="mnemonic-words">{mnemonic}</code>
+                <button className="connect-btn" onClick={() => setMnemonic(null)} style={{ marginTop: 12 }}>
+                  I've saved it
+                </button>
+              </div>
+            )}
+          </div>
+          {txStatus && <div className="tx-status">{txStatus}</div>}
         </div>
-        <div className="connect-prompt">
-          <h3>Setup Private Wallet</h3>
-          <p>Create an Unlink private account to make anonymous bets on Monad.</p>
-          <button className="connect-btn large" onClick={handleSetupWallet} disabled={isLoading}>
-            {isLoading ? <><span className="spinner" />Setting up...</> : "Create Private Wallet"}
-          </button>
-          {mnemonic && (
-            <div className="mnemonic-box">
-              <p className="mnemonic-label">Back up your recovery phrase:</p>
-              <code className="mnemonic-words">{mnemonic}</code>
-              <button className="connect-btn" onClick={() => setMnemonic(null)} style={{ marginTop: 12 }}>
-                I've saved it
-              </button>
-            </div>
-          )}
-        </div>
-        {txStatus && <div className="tx-status">{txStatus}</div>}
       </div>
     );
   }
@@ -486,14 +490,15 @@ export function BetWidget({ provider, account, initialMarket }: BetWidgetProps) 
   // Step 2: Ready — multi-view betting UI
   return (
     <div className="bet-widget">
-      {/* Header */}
-      <div className="widget-header">
-        <h2>SHADOWBET</h2>
-        <span className="privacy-badge">UNLINK</span>
-      </div>
+      {/* Persistent Header Card */}
+      <div className="widget-top">
+        <div className="widget-header">
+          <h2>SHADOWBET</h2>
+          <span className="privacy-badge">UNLINK</span>
+        </div>
 
-      {/* Compact Balance Bar — always visible */}
-      <div className="balance-bar">
+        {/* Compact Balance Bar */}
+        <div className="balance-bar">
         <span>{fmtBal(publicBalance)} MON</span>
         <span className="balance-bar-sep">|</span>
         <span className="balance-bar-private">&#x1F512; {fmtBal(privateBalance)} MON</span>
@@ -522,10 +527,11 @@ export function BetWidget({ provider, account, initialMarket }: BetWidgetProps) 
           )}
         </div>
       </div>
+      </div>{/* /widget-top */}
 
       {/* ===== VIEW: Browse Markets ===== */}
       {viewStep === "browse" && (
-        <div className="view-content">
+        <div className="view-browse">
           {/* Market Grid */}
           {markets.length > 0 ? (
             <div className="market-grid">
@@ -549,7 +555,7 @@ export function BetWidget({ provider, account, initialMarket }: BetWidgetProps) 
 
       {/* ===== VIEW: Admin ===== */}
       {viewStep === "admin" && (
-        <div className="view-content">
+        <div className="view-card">
           <button className="step-back" onClick={() => setViewStep("browse")}>
             &#8592; Back
           </button>
@@ -606,7 +612,7 @@ export function BetWidget({ provider, account, initialMarket }: BetWidgetProps) 
 
       {/* ===== VIEW: Place Bet ===== */}
       {viewStep === "bet" && (
-        <div className="view-content">
+        <div className="view-card">
           <button className="step-back" onClick={() => setViewStep("browse")}>
             &#8592; All Markets
           </button>
@@ -725,7 +731,7 @@ export function BetWidget({ provider, account, initialMarket }: BetWidgetProps) 
 
       {/* ===== VIEW: Wallet ===== */}
       {viewStep === "wallet" && (
-        <div className="view-content">
+        <div className="view-card">
           <button className="step-back" onClick={() => setViewStep("browse")}>
             &#8592; Back
           </button>
