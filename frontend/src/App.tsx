@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { ethers } from "ethers";
 import { BetWidget } from "./BetWidget";
+import { HowItWorks } from "./HowItWorks";
 import { MONAD_TESTNET } from "./contract";
 import "./App.css";
 
@@ -16,7 +17,25 @@ function App() {
   const [chainId, setChainId] = useState<number | null>(null);
   const [wrongNetwork, setWrongNetwork] = useState(false);
 
+  const [page, setPage] = useState<"app" | "how">(
+    window.location.hash === "#/how-it-works" ? "how" : "app"
+  );
+
   const isMetaMaskInstalled = typeof window.ethereum !== "undefined";
+
+  const navigateTo = (p: "app" | "how") => {
+    setPage(p);
+    window.location.hash = p === "how" ? "#/how-it-works" : "#/";
+  };
+
+  // Listen for hash changes
+  useEffect(() => {
+    const onHash = () => {
+      setPage(window.location.hash === "#/how-it-works" ? "how" : "app");
+    };
+    window.addEventListener("hashchange", onHash);
+    return () => window.removeEventListener("hashchange", onHash);
+  }, []);
 
   const switchToMonad = async () => {
     try {
@@ -127,6 +146,12 @@ function App() {
           <span className="privacy-badge">UNLINK</span>
         </div>
         <div className="nav-buttons">
+          <button
+            className={`nav-link ${page === "how" ? "active" : ""}`}
+            onClick={() => navigateTo("how")}
+          >
+            How It Works
+          </button>
           {!account ? (
             <button className="connect-btn" onClick={connectWallet}>
               {isMetaMaskInstalled ? "Connect Wallet" : "Install MetaMask"}
@@ -149,7 +174,9 @@ function App() {
 
       {/* Main */}
       <main className="main-content">
-        {!account ? (
+        {page === "how" ? (
+          <HowItWorks onStart={() => navigateTo("app")} />
+        ) : !account ? (
           <div className="bet-widget">
             <div className="widget-header">
               <h2>SHADOWBET</h2>

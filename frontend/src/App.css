@@ -92,6 +92,29 @@ body::before {
 
 .nav-buttons { display: flex; align-items: center; gap: 10px; }
 
+.nav-link {
+  background: none;
+  border: none;
+  color: rgba(255,255,255,0.5);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 6px 12px;
+  border-radius: 8px;
+  transition: all 0.2s;
+  font-family: 'Inter', sans-serif;
+}
+
+.nav-link:hover {
+  color: rgba(255,255,255,0.8);
+  background: rgba(255,255,255,0.05);
+}
+
+.nav-link.active {
+  color: #a78bfa;
+  background: rgba(124, 58, 237, 0.1);
+}
+
 .wallet-info { display: flex; align-items: center; gap: 8px; }
 
 .network-pill, .address-pill {
@@ -824,6 +847,163 @@ body::before {
 }
 .tx-link:hover {
   color: #c4b5fd;
+}
+
+/* ===== HOW IT WORKS ===== */
+.how-it-works {
+  max-width: 720px;
+  width: 100%;
+  animation: fadeSlideUp 0.4s ease-out;
+}
+
+.hiw-header {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.hiw-header h2 {
+  font-size: 28px;
+  font-weight: 700;
+  margin-bottom: 8px;
+  background: linear-gradient(135deg, #a855f7, #6366f1);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.hiw-subtitle {
+  color: rgba(255,255,255,0.5);
+  font-size: 15px;
+}
+
+.hiw-steps {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+.hiw-step {
+  background: rgba(22, 18, 32, 0.95);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 18px;
+  padding: 24px 20px;
+  text-align: center;
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.hiw-step:hover {
+  border-color: rgba(124, 58, 237, 0.3);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(124, 58, 237, 0.1);
+}
+
+.hiw-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 12px;
+}
+
+.shield-icon {
+  background: rgba(34, 197, 94, 0.1);
+  color: #4ade80;
+}
+
+.bet-icon {
+  background: rgba(124, 58, 237, 0.1);
+  color: #a78bfa;
+}
+
+.claim-icon {
+  background: rgba(96, 165, 250, 0.1);
+  color: #60a5fa;
+}
+
+.hiw-step-num {
+  position: absolute;
+  top: 12px;
+  right: 14px;
+  font-size: 11px;
+  font-weight: 700;
+  color: rgba(255,255,255,0.15);
+}
+
+.hiw-step h3 {
+  font-size: 16px;
+  font-weight: 700;
+  margin-bottom: 8px;
+  color: white;
+}
+
+.hiw-step p {
+  font-size: 13px;
+  color: rgba(255,255,255,0.5);
+  line-height: 1.5;
+  margin-bottom: 12px;
+}
+
+.hiw-detail code {
+  display: inline-block;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 11px;
+  color: rgba(255,255,255,0.6);
+  font-family: 'SF Mono', 'Fira Code', monospace;
+}
+
+/* Privacy section */
+.hiw-privacy {
+  background: rgba(22, 18, 32, 0.95);
+  border: 1px solid rgba(34, 197, 94, 0.12);
+  border-radius: 18px;
+  padding: 24px;
+  margin-bottom: 24px;
+}
+
+.hiw-privacy h3 {
+  font-size: 15px;
+  font-weight: 700;
+  margin-bottom: 16px;
+  color: #4ade80;
+  text-align: center;
+}
+
+.hiw-privacy-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.hiw-privacy-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: rgba(255,255,255,0.7);
+}
+
+.hiw-check {
+  color: #4ade80;
+  font-weight: 700;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.hiw-cta {
+  display: block;
+  width: 100%;
+  text-align: center;
+}
+
+@media (max-width: 640px) {
+  .hiw-steps { grid-template-columns: 1fr; }
+  .hiw-header h2 { font-size: 22px; }
 }
 
 /* ===== FOOTER ===== */
