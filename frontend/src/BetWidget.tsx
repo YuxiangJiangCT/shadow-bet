@@ -236,6 +236,11 @@ export function BetWidget({ provider, account, initialMarket, requestedView, onV
     }
   }, [requestedView]);
 
+  // Refresh markets when returning to browse view
+  useEffect(() => {
+    if (viewStep === "browse") loadMarkets();
+  }, [viewStep, loadMarkets]);
+
   // --- Determine setup step ---
   useEffect(() => {
     if (!ready) { setSetupStep("loading"); return; }
@@ -332,6 +337,8 @@ export function BetWidget({ provider, account, initialMarket, requestedView, onV
       showStatus(`Bet placed privately!`, 0);
       setBetAmount("");
       setSelectedOption(null);
+      // Delay before reload — RPC rate limit cooldown after fund+send
+      await new Promise(r => setTimeout(r, 2000));
       await loadMarkets();
 
       // Auto-sweep leftover to privacy pool
@@ -353,7 +360,9 @@ export function BetWidget({ provider, account, initialMarket, requestedView, onV
       await loadBurnerBalance();
       await loadMyBets();
       setViewStep("wallet");
-      showStatus("Bet placed privately!", 8000);
+      showStatus("Bet placed privately! Markets will refresh shortly.", 8000);
+      // Background reload after sweep settles
+      setTimeout(() => loadMarkets(), 5000);
     } catch (err: any) {
       const friendly = parseContractError(err);
       // Auto-rotate burner on AlreadyBet
