@@ -123,6 +123,7 @@ function App() {
         <div className="nav-logo">
           <span className="logo-text">ShadowBet</span>
           <span className="chain-badge">MONAD</span>
+          <span className="privacy-badge">UNLINK</span>
         </div>
         <div className="nav-buttons">
           {!account ? (
