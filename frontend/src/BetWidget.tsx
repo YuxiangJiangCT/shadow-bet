@@ -215,7 +215,7 @@ export function BetWidget({ provider, account, initialMarket, requestedView, onV
 
   // Sync requestedView from App nav
   useEffect(() => {
-    if (requestedView === "wallet" || requestedView === "admin") {
+    if (requestedView === "browse" || requestedView === "wallet" || requestedView === "admin") {
       setViewStep(requestedView);
       onViewChanged?.();
     }

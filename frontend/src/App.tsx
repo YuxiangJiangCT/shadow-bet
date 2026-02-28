@@ -204,7 +204,7 @@ function App() {
     <div className="app-container">
       {/* Nav */}
       <nav className="nav-bar">
-        <div className="nav-logo" onClick={() => navigateTo("app")} style={{ cursor: "pointer" }}>
+        <div className="nav-logo" onClick={() => { setWidgetView("browse"); navigateTo("app"); }} style={{ cursor: "pointer" }}>
           <img src="/logo.svg" alt="ShadowBet" className="nav-logo-img" />
           <span className="logo-text">ShadowBet</span>
           <span className="chain-badge">MONAD</span>
