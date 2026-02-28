@@ -222,7 +222,12 @@ export function BetWidget({ provider, account, initialMarket, requestedView, onV
   useEffect(() => { loadMarkets(); }, [loadMarkets]);
   useEffect(() => { loadPublicBalance(); }, [loadPublicBalance]);
   useEffect(() => { loadBurnerBalance(); }, [loadBurnerBalance]);
-  useEffect(() => { loadMyBets(); }, [loadMyBets]);
+  // Load bets AFTER markets load + RPC cooldown (avoid rate limit clash)
+  useEffect(() => {
+    if (markets.length === 0 || burners.length === 0) return;
+    const timer = setTimeout(() => loadMyBets(), 3000);
+    return () => clearTimeout(timer);
+  }, [markets, burners, loadMyBets]);
 
   // Sync initialMarket prop
   useEffect(() => {
