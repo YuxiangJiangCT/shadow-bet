@@ -332,6 +332,16 @@ export function BetWidget({ provider, account, initialMarket, requestedView, onV
         params: { token: MON_TOKEN, amount: amount + gasReserve },
       });
 
+      // Verify burner was actually funded (SDK may fail silently)
+      const fundedAddr = burners.find(b => b.index === burnerIndex)?.address;
+      if (fundedAddr) {
+        await new Promise(r => setTimeout(r, 1000)); // wait for on-chain state
+        const burnerBal = await getBalance(fundedAddr);
+        if (burnerBal < amount) {
+          throw new Error("Burner funding failed — try again or shield more MON");
+        }
+      }
+
       // Build placeBet calldata
       const calldata = iface.encodeFunctionData("placeBet", [selectedMarket, selectedOption]);
 
