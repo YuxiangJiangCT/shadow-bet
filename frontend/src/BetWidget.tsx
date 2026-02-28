@@ -207,7 +207,7 @@ export function BetWidget({ provider, account }: BetWidgetProps) {
 
     try {
       const amount = ethers.parseEther(betAmount);
-      const gasReserve = ethers.parseEther("0.01");
+      const gasReserve = ethers.parseEther("0.05");
 
       // Ensure burner exists
       if (!burners.find(b => b.index === burnerIndex)) {
