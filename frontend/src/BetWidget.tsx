@@ -17,6 +17,15 @@ interface Market {
 interface BetWidgetProps {
   provider: ethers.BrowserProvider;
   account: string;
+  initialMarket?: number | null;
+}
+
+interface MyBet {
+  marketId: number;
+  burnerAddr: string;
+  amount: bigint;
+  option: number;
+  claimed: boolean;
 }
 
 const iface = new ethers.Interface(SHADOWBET_ABI);
@@ -54,10 +63,10 @@ function fmtBal(wei: bigint, decimals = 18): string {
   return `${int}.${dec.slice(0, 4)}`;
 }
 
-export function BetWidget({ provider, account }: BetWidgetProps) {
+export function BetWidget({ provider, account, initialMarket }: BetWidgetProps) {
   // --- Market state ---
   const [markets, setMarkets] = useState<Market[]>([]);
-  const [selectedMarket, setSelectedMarket] = useState<number | null>(null);
+  const [selectedMarket, setSelectedMarket] = useState<number | null>(initialMarket ?? null);
   const [betAmount, setBetAmount] = useState("");
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
@@ -135,10 +144,42 @@ export function BetWidget({ provider, account }: BetWidgetProps) {
     }
   }, [provider]);
 
+  // --- My Bets state ---
+  const [myBets, setMyBets] = useState<MyBet[]>([]);
+
+  const loadMyBets = useCallback(async () => {
+    if (burners.length === 0 || markets.length === 0) { setMyBets([]); return; }
+    try {
+      const contract = new ethers.Contract(CONTRACT_ADDRESS, SHADOWBET_ABI, provider);
+      const results = await Promise.all(
+        burners.flatMap((b) =>
+          markets.map(async (m) => {
+            try {
+              const bet = await contract.getBet(m.id, b.address);
+              if (bet.amount > 0n) {
+                return { marketId: m.id, burnerAddr: b.address, amount: bet.amount, option: Number(bet.option), claimed: bet.claimed } as MyBet;
+              }
+            } catch { /* no bet */ }
+            return null;
+          })
+        )
+      );
+      setMyBets(results.filter((r): r is MyBet => r !== null));
+    } catch { /* ignore */ }
+  }, [burners, markets, provider]);
+
   // --- Init effects ---
   useEffect(() => { loadMarkets(); }, [loadMarkets]);
   useEffect(() => { loadPublicBalance(); }, [loadPublicBalance]);
   useEffect(() => { loadBurnerBalance(); }, [loadBurnerBalance]);
+  useEffect(() => { loadMyBets(); }, [loadMyBets]);
+
+  // Sync initialMarket prop
+  useEffect(() => {
+    if (initialMarket !== undefined && initialMarket !== null) {
+      setSelectedMarket(initialMarket);
+    }
+  }, [initialMarket]);
 
   // --- Determine setup step ---
   useEffect(() => {
@@ -255,6 +296,7 @@ export function BetWidget({ provider, account }: BetWidgetProps) {
       } catch { /* sweep is best-effort */ }
 
       await loadBurnerBalance();
+      await loadMyBets();
       showStatus("Bet placed privately!", 8000);
     } catch (err: any) {
       const friendly = parseContractError(err);
@@ -466,6 +508,50 @@ export function BetWidget({ provider, account }: BetWidgetProps) {
         </div>
       ) : (
         <div className="no-markets">No markets yet</div>
+      )}
+
+      {/* My Bets Panel */}
+      {myBets.length > 0 && (
+        <div className="my-bets">
+          <div className="my-bets-header">
+            <h3>My Bets</h3>
+            <span className="my-bets-count">{myBets.length}</span>
+          </div>
+          {myBets.map((bet, i) => {
+            const m = markets.find((mk) => mk.id === bet.marketId);
+            const status = bet.claimed
+              ? "claimed"
+              : m?.resolved && bet.option === m.winningOption
+              ? "won"
+              : m?.resolved
+              ? "lost"
+              : "active";
+            return (
+              <div key={i} className={`my-bets-row ${status}`}>
+                <div className="my-bets-market">
+                  <span className="my-bets-question">
+                    {m ? (m.question.length > 40 ? m.question.slice(0, 40) + "..." : m.question) : `Market #${bet.marketId}`}
+                  </span>
+                  <span className="my-bets-burner">
+                    via {bet.burnerAddr.slice(0, 6)}...{bet.burnerAddr.slice(-4)}
+                  </span>
+                </div>
+                <div className="my-bets-info">
+                  <span className="my-bets-option">{bet.option === 0 ? "YES" : "NO"}</span>
+                  <span className="my-bets-amount">{fmtBal(bet.amount)} MON</span>
+                  <span className={`my-bets-status ${status}`}>
+                    {status === "claimed" ? "Claimed" : status === "won" ? "Won" : status === "lost" ? "Lost" : "Active"}
+                  </span>
+                  {status === "won" && (
+                    <button className="my-bets-claim" onClick={() => handleClaim(bet.marketId)} disabled={isLoading}>
+                      Claim
+                    </button>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
       )}
 
       {/* Market Info */}

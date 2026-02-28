@@ -3,6 +3,7 @@ import { ethers } from "ethers";
 import { BetWidget } from "./BetWidget";
 import { HowItWorks } from "./HowItWorks";
 import { MarketCard } from "./MarketCard";
+import { MarketDetail } from "./MarketDetail";
 import { PrivacyProof } from "./PrivacyProof";
 import { MONAD_TESTNET, CONTRACT_ADDRESS, SHADOWBET_ABI } from "./contract";
 import { useOnChainAudit } from "./useOnChainAudit";
@@ -35,29 +36,38 @@ function App() {
   const [publicMarkets, setPublicMarkets] = useState<MarketData[]>([]);
   const { totalBets } = useOnChainAudit();
 
-  const [page, setPage] = useState<"app" | "how" | "privacy">(
-    window.location.hash === "#/how-it-works"
-      ? "how"
-      : window.location.hash === "#/privacy-proof"
-      ? "privacy"
-      : "app"
-  );
+  const parseHash = (h: string): { page: "app" | "how" | "privacy" | "market"; marketId: number | null } => {
+    const marketMatch = h.match(/^#\/market\/(\d+)$/);
+    if (marketMatch) return { page: "market", marketId: Number(marketMatch[1]) };
+    if (h === "#/how-it-works") return { page: "how", marketId: null };
+    if (h === "#/privacy-proof") return { page: "privacy", marketId: null };
+    return { page: "app", marketId: null };
+  };
+
+  const initialRoute = parseHash(window.location.hash);
+  const [page, setPage] = useState<"app" | "how" | "privacy" | "market">(initialRoute.page);
+  const [marketId, setMarketId] = useState<number | null>(initialRoute.marketId);
+  const [initialMarket, setInitialMarket] = useState<number | null>(null);
 
   const isMetaMaskInstalled = typeof window.ethereum !== "undefined";
 
-  const navigateTo = (p: "app" | "how" | "privacy") => {
+  const navigateTo = (p: "app" | "how" | "privacy" | "market", id?: number) => {
     setPage(p);
-    const hashes = { app: "#/", how: "#/how-it-works", privacy: "#/privacy-proof" };
-    window.location.hash = hashes[p];
+    setMarketId(p === "market" && id !== undefined ? id : null);
+    if (p === "market" && id !== undefined) {
+      window.location.hash = `#/market/${id}`;
+    } else {
+      const hashes = { app: "#/", how: "#/how-it-works", privacy: "#/privacy-proof", market: "#/" };
+      window.location.hash = hashes[p];
+    }
   };
 
   // Listen for hash changes
   useEffect(() => {
     const onHash = () => {
-      const h = window.location.hash;
-      setPage(
-        h === "#/how-it-works" ? "how" : h === "#/privacy-proof" ? "privacy" : "app"
-      );
+      const parsed = parseHash(window.location.hash);
+      setPage(parsed.page);
+      setMarketId(parsed.marketId);
     };
     window.addEventListener("hashchange", onHash);
     return () => window.removeEventListener("hashchange", onHash);
@@ -237,6 +247,21 @@ function App() {
           <HowItWorks onStart={() => navigateTo("app")} />
         ) : page === "privacy" ? (
           <PrivacyProof account={account} burnerAddr={null} onStart={() => navigateTo("app")} />
+        ) : page === "market" && marketId !== null ? (
+          <MarketDetail
+            marketId={marketId}
+            account={account}
+            onConnect={connectWallet}
+            onBet={(id) => {
+              if (!account) {
+                connectWallet();
+              } else {
+                setInitialMarket(id);
+                navigateTo("app");
+              }
+            }}
+            onBack={() => navigateTo("app")}
+          />
         ) : !account ? (
           /* ===== LANDING PAGE (no wallet) ===== */
           <div className="landing">
@@ -265,7 +290,7 @@ function App() {
                       key={m.id}
                       market={m}
                       selected={false}
-                      onClick={connectWallet}
+                      onClick={() => navigateTo("market", m.id)}
                     />
                   ))}
                 </div>
@@ -318,7 +343,7 @@ function App() {
             </div>
           </div>
         ) : (
-          <BetWidget provider={provider!} account={account} />
+          <BetWidget provider={provider!} account={account} initialMarket={initialMarket} />
         )}
       </main>
 
