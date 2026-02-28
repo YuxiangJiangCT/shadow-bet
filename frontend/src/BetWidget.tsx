@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { ethers } from "ethers";
 import { useUnlink, useBurner } from "@unlink-xyz/react";
 import { SHADOWBET_ABI, CONTRACT_ADDRESS, MON_TOKEN, MONAD_TESTNET, ERROR_MESSAGES } from "./contract";
+import { MarketCard } from "./MarketCard";
 
 interface Market {
   id: number;
@@ -451,17 +452,16 @@ export function BetWidget({ provider, account }: BetWidgetProps) {
         )}
       </div>
 
-      {/* Market Selector */}
+      {/* Market Grid */}
       {markets.length > 0 ? (
-        <div className="market-selector">
+        <div className="market-grid">
           {markets.map((m) => (
-            <button
+            <MarketCard
               key={m.id}
-              className={`market-tab ${selectedMarket === m.id ? "active" : ""}`}
+              market={m}
+              selected={selectedMarket === m.id}
               onClick={() => setSelectedMarket(m.id)}
-            >
-              #{m.id}
-            </button>
+            />
           ))}
         </div>
       ) : (
