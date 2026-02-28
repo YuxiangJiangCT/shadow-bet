@@ -159,9 +159,17 @@ body::before {
 .main-content {
   flex: 1;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
   padding: 90px 20px 40px;
+}
+
+/* Center short content (widget/how-it-works) vertically when space allows */
+.bet-widget,
+.how-it-works,
+.privacy-proof {
+  margin-top: auto;
+  margin-bottom: auto;
 }
 
 /* ===== LANDING PAGE ===== */
