@@ -11,6 +11,9 @@ export const MONAD_TESTNET = {
 
 export const CONTRACT_ADDRESS = "0x1187167eFA940EA400A8C2c7D91573A2Ec93145A";
 
+// Native MON token address for Unlink privacy pool
+export const MON_TOKEN = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE";
+
 export const SHADOWBET_ABI = [
   // Read functions
   "function admin() view returns (address)",
