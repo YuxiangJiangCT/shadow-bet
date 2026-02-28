@@ -47,6 +47,20 @@ body::before {
 
 .nav-logo { display: flex; align-items: center; gap: 10px; }
 
+.nav-logo-img {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+}
+
+.hero-logo {
+  width: 96px;
+  height: 96px;
+  margin-bottom: 16px;
+  border-radius: 16px;
+  filter: drop-shadow(0 4px 20px rgba(124, 58, 237, 0.3));
+}
+
 .logo-text {
   font-size: 20px;
   font-weight: 700;
@@ -127,6 +141,21 @@ body::before {
   padding: 90px 20px 40px;
 }
 
+/* ===== ANIMATIONS ===== */
+@keyframes fadeSlideUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 8px 40px rgba(0,0,0,0.5), 0 0 0 rgba(124, 58, 237, 0); }
+  50% { box-shadow: 0 8px 40px rgba(0,0,0,0.5), 0 0 30px rgba(124, 58, 237, 0.08); }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
 /* ===== WIDGET ===== */
 .bet-widget {
   background: rgba(22, 18, 32, 0.95);
@@ -136,6 +165,20 @@ body::before {
   border: 1px solid rgba(255,255,255,0.06);
   max-width: 480px;
   width: 100%;
+  animation: fadeSlideUp 0.4s ease-out;
+}
+
+/* ===== LOADING SPINNER ===== */
+.spinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255,255,255,0.2);
+  border-top-color: #a78bfa;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+  vertical-align: middle;
+  margin-right: 8px;
 }
 
 .widget-header {

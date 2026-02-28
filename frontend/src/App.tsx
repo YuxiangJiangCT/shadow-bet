@@ -121,6 +121,7 @@ function App() {
       {/* Nav */}
       <nav className="nav-bar">
         <div className="nav-logo">
+          <img src="/logo.svg" alt="ShadowBet" className="nav-logo-img" />
           <span className="logo-text">ShadowBet</span>
           <span className="chain-badge">MONAD</span>
           <span className="privacy-badge">UNLINK</span>
@@ -155,6 +156,7 @@ function App() {
               <span className="privacy-badge">PRIVACY</span>
             </div>
             <div className="connect-prompt">
+              <img src="/logo.svg" alt="ShadowBet" className="hero-logo" />
               <h3>Private Prediction Markets</h3>
               <p>Your bets. Your secret. On Monad.</p>
               <button className="connect-btn large" onClick={connectWallet}>

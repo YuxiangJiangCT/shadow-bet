@@ -298,6 +298,7 @@ export function BetWidget({ provider, account }: BetWidgetProps) {
           <span className="privacy-badge">PRIVACY</span>
         </div>
         <div className="connect-prompt">
+          <span className="spinner" />
           <p>Initializing privacy engine...</p>
         </div>
       </div>
@@ -315,7 +316,7 @@ export function BetWidget({ provider, account }: BetWidgetProps) {
           <h3>Setup Private Wallet</h3>
           <p>Create an Unlink private account to make anonymous bets on Monad.</p>
           <button className="connect-btn large" onClick={handleSetupWallet} disabled={isLoading}>
-            {isLoading ? "Setting up..." : "Create Private Wallet"}
+            {isLoading ? <><span className="spinner" />Setting up...</> : "Create Private Wallet"}
           </button>
           {mnemonic && (
             <div className="mnemonic-box">
@@ -482,7 +483,7 @@ export function BetWidget({ provider, account }: BetWidgetProps) {
                 onClick={handlePlaceBet}
                 disabled={isLoading || selectedOption === null || !betAmount || parseFloat(betAmount) <= 0 || privateBalance <= 0n}
               >
-                {isLoading ? "Processing..." : privateBalance <= 0n ? "Shield MON first" : selectedOption === null ? "Select YES or NO" : "Place Private Bet"}
+                {isLoading ? <><span className="spinner" />Processing...</> : privateBalance <= 0n ? "Shield MON first" : selectedOption === null ? "Select YES or NO" : "Place Private Bet"}
               </button>
             </div>
           )}
@@ -491,7 +492,7 @@ export function BetWidget({ provider, account }: BetWidgetProps) {
           {market.resolved && (
             <div className="claim-section">
               <button className="claim-btn" onClick={() => handleClaim(market.id)} disabled={isLoading}>
-                {isLoading ? "Claiming..." : "Claim & Re-shield"}
+                {isLoading ? <><span className="spinner" />Claiming...</> : "Claim & Re-shield"}
               </button>
             </div>
           )}
