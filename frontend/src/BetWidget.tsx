@@ -100,7 +100,10 @@ export function BetWidget({ provider, account, initialMarket }: BetWidgetProps) 
   const [isAdmin, setIsAdmin] = useState(false);
   const [adminOpen, setAdminOpen] = useState(false);
   const [newQuestion, setNewQuestion] = useState("");
-  const [newDuration, setNewDuration] = useState(259200); // 3 days default
+  const [newEndTime, setNewEndTime] = useState(() => {
+    const d = new Date(Date.now() + 259200 * 1000); // default 3 days
+    return d.toISOString().slice(0, 16);
+  });
   const burnerAddr = activeBurner?.address ?? (burners.length > 0 ? burners[0].address : null);
 
   // --- Status helper ---
@@ -199,7 +202,7 @@ export function BetWidget({ provider, account, initialMarket }: BetWidgetProps) 
     try {
       const signer = await provider.getSigner();
       const contract = new ethers.Contract(CONTRACT_ADDRESS, SHADOWBET_ABI, signer);
-      const endTime = Math.floor(Date.now() / 1000) + newDuration;
+      const endTime = Math.floor(new Date(newEndTime).getTime() / 1000);
       const tx = await contract.createMarket(newQuestion.trim(), endTime);
       await tx.wait();
       showStatus("Market created!");
@@ -542,15 +545,25 @@ export function BetWidget({ provider, account, initialMarket }: BetWidgetProps) 
                     ].map((d) => (
                       <button
                         key={d.val}
-                        className={`quick-btn ${newDuration === d.val ? "selected" : ""}`}
-                        onClick={() => setNewDuration(d.val)}
+                        className="quick-btn"
+                        onClick={() => {
+                          const dt = new Date(Date.now() + d.val * 1000);
+                          setNewEndTime(dt.toISOString().slice(0, 16));
+                        }}
                       >
                         {d.label}
                       </button>
                     ))}
                   </div>
+                  <input
+                    type="datetime-local"
+                    className="shield-input"
+                    value={newEndTime}
+                    onChange={(e) => setNewEndTime(e.target.value)}
+                    disabled={isLoading}
+                  />
                   <div className="admin-end-preview">
-                    Ends: {new Date(Date.now() + newDuration * 1000).toLocaleString()}
+                    Ends: {new Date(newEndTime).toLocaleString()}
                   </div>
                   <button
                     className="connect-btn"
