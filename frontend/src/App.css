@@ -1180,9 +1180,223 @@ body::before {
   text-align: center;
 }
 
+/* ===== ON-CHAIN AUDIT ===== */
+.pp-audit {
+  background: rgba(22, 18, 32, 0.95);
+  border: 1px solid rgba(124, 58, 237, 0.15);
+  border-radius: 18px;
+  padding: 24px;
+  margin-bottom: 20px;
+}
+
+.pp-audit-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.pp-audit-header h3 {
+  font-size: 16px;
+  font-weight: 700;
+  color: white;
+}
+
+.pp-audit-count {
+  background: rgba(34, 197, 94, 0.15);
+  color: #4ade80;
+  padding: 4px 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.pp-audit-loading,
+.pp-audit-empty,
+.pp-audit-error {
+  text-align: center;
+  padding: 24px 16px;
+  color: rgba(255,255,255,0.4);
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.pp-audit-error {
+  color: #f87171;
+}
+
+.pp-audit-table-wrap {
+  overflow-x: auto;
+  margin-bottom: 12px;
+}
+
+.pp-audit-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.pp-audit-table th {
+  text-align: left;
+  padding: 8px 10px;
+  color: rgba(255,255,255,0.4);
+  font-weight: 600;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.pp-audit-table td {
+  padding: 8px 10px;
+  color: rgba(255,255,255,0.7);
+  border-bottom: 1px solid rgba(255,255,255,0.03);
+}
+
+.pp-audit-table tr:hover td {
+  background: rgba(255,255,255,0.02);
+}
+
+.pp-audit-link {
+  color: #a78bfa;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.pp-audit-link:hover {
+  color: #c4b5fd;
+  text-decoration: underline;
+}
+
+.pp-audit-link.mono {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+}
+
+.pp-audit-hidden {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(34, 197, 94, 0.12);
+  color: #4ade80;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-weight: 700;
+  font-size: 11px;
+}
+
+.pp-audit-summary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 0;
+  font-size: 12px;
+  color: rgba(255,255,255,0.4);
+}
+
+.pp-audit-sep {
+  color: rgba(255,255,255,0.15);
+}
+
+.pp-audit-zero {
+  color: #4ade80;
+  font-weight: 600;
+}
+
+/* Solidity source callout */
+.pp-solidity {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 12px;
+  padding: 16px;
+  margin-top: 16px;
+}
+
+.pp-solidity-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: rgba(255,255,255,0.4);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 10px;
+}
+
+.pp-solidity-code {
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: 8px;
+  padding: 12px;
+  overflow-x: auto;
+  margin: 0 0 10px 0;
+}
+
+.pp-solidity-code code {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 12px;
+  color: #4ade80;
+  line-height: 1.6;
+  white-space: pre;
+}
+
+.pp-solidity-note {
+  font-size: 12px;
+  color: rgba(255,255,255,0.5);
+  line-height: 1.5;
+  margin: 0;
+}
+
+.pp-solidity-note em {
+  color: #a78bfa;
+  font-style: normal;
+  font-weight: 600;
+}
+
+.pp-verify-link {
+  display: block;
+  text-align: center;
+  margin-top: 16px;
+  color: #a78bfa;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  padding: 10px;
+  border: 1px solid rgba(124, 58, 237, 0.2);
+  border-radius: 10px;
+  transition: all 0.2s;
+}
+
+.pp-verify-link:hover {
+  background: rgba(124, 58, 237, 0.1);
+  border-color: rgba(124, 58, 237, 0.4);
+  color: #c4b5fd;
+}
+
+/* Landing stats badge */
+.landing-stats {
+  margin-bottom: 16px;
+  text-align: center;
+}
+
+.stats-badge {
+  display: inline-block;
+  background: rgba(34, 197, 94, 0.1);
+  border: 1px solid rgba(34, 197, 94, 0.2);
+  color: #4ade80;
+  padding: 6px 16px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
 @media (max-width: 640px) {
   .pp-comparison { grid-template-columns: 1fr; }
   .pp-header h2 { font-size: 22px; }
+  .pp-audit { padding: 16px; }
+  .pp-audit-table { font-size: 11px; }
 }
 
 /* ===== HOW IT WORKS ===== */

@@ -1,3 +1,7 @@
+import { ethers } from "ethers";
+import { useOnChainAudit } from "./useOnChainAudit";
+import { MONAD_TESTNET, CONTRACT_ADDRESS } from "./contract";
+
 interface PrivacyProofProps {
   account: string | null;
   burnerAddr: string | null;
@@ -5,11 +9,17 @@ interface PrivacyProofProps {
 }
 
 export function PrivacyProof({ account, burnerAddr, onStart }: PrivacyProofProps) {
+  const { events, totalBets, totalVolume, loading, error } = useOnChainAudit();
+
   const walletDisplay = account
     ? `${account.slice(0, 6)}...${account.slice(-4)}`
     : "0xABC...1234";
+
+  // Use real burner from chain data if available
   const burnerDisplay = burnerAddr
     ? `${burnerAddr.slice(0, 6)}...${burnerAddr.slice(-4)}`
+    : events.length > 0
+    ? `${events[0].user.slice(0, 6)}...${events[0].user.slice(-4)}`
     : "0xDEF...5678";
 
   return (
@@ -19,6 +29,7 @@ export function PrivacyProof({ account, burnerAddr, onStart }: PrivacyProofProps
         <p className="pp-subtitle">Why privacy matters in prediction markets</p>
       </div>
 
+      {/* ===== Visual Diff ===== */}
       <div className="pp-comparison">
         {/* Left: Normal */}
         <div className="pp-side pp-normal">
@@ -98,6 +109,115 @@ export function PrivacyProof({ account, burnerAddr, onStart }: PrivacyProofProps
           The BetPlaced event intentionally omits your YES/NO choice.
           Even if someone finds the burner, they still can't determine your position.
         </div>
+      </div>
+
+      {/* ===== Live On-Chain Audit ===== */}
+      <div className="pp-audit">
+        <div className="pp-audit-header">
+          <h3>Live On-Chain Audit</h3>
+          {totalBets > 0 && (
+            <span className="pp-audit-count">{totalBets} private bets</span>
+          )}
+        </div>
+
+        {loading ? (
+          <div className="pp-audit-loading">
+            <span className="spinner" />
+            <span>Querying Monad blockchain...</span>
+          </div>
+        ) : error ? (
+          <div className="pp-audit-error">
+            {error} &mdash;{" "}
+            <a
+              href={`${MONAD_TESTNET.blockExplorer}/address/${CONTRACT_ADDRESS}#events`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="pp-audit-link"
+            >
+              verify on Explorer
+            </a>
+          </div>
+        ) : events.length === 0 ? (
+          <div className="pp-audit-empty">
+            No bets placed yet. Be the first to test privacy!
+          </div>
+        ) : (
+          <>
+            <div className="pp-audit-table-wrap">
+              <table className="pp-audit-table">
+                <thead>
+                  <tr>
+                    <th>Block</th>
+                    <th>From (Burner)</th>
+                    <th>Amount</th>
+                    <th>Market</th>
+                    <th>Side</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {events.map((ev, i) => (
+                    <tr key={i}>
+                      <td>
+                        <a
+                          href={`${MONAD_TESTNET.blockExplorer}/tx/${ev.txHash}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="pp-audit-link"
+                        >
+                          {ev.blockNumber}
+                        </a>
+                      </td>
+                      <td>
+                        <a
+                          href={`${MONAD_TESTNET.blockExplorer}/address/${ev.user}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="pp-audit-link mono"
+                        >
+                          {ev.user.slice(0, 6)}...{ev.user.slice(-4)}
+                        </a>
+                      </td>
+                      <td>{parseFloat(ethers.formatEther(ev.amount)).toFixed(2)} MON</td>
+                      <td>#{ev.marketId}</td>
+                      <td>
+                        <span className="pp-audit-hidden">&#x1F512; ???</span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="pp-audit-summary">
+              <span>{totalBets} bets</span>
+              <span className="pp-audit-sep">&middot;</span>
+              <span>{parseFloat(ethers.formatEther(totalVolume)).toFixed(2)} MON volume</span>
+              <span className="pp-audit-sep">&middot;</span>
+              <span className="pp-audit-zero">0 positions revealed</span>
+            </div>
+          </>
+        )}
+
+        {/* Solidity source proof */}
+        <div className="pp-solidity">
+          <div className="pp-solidity-label">Why "Side" is always ???</div>
+          <pre className="pp-solidity-code"><code>{`// ShadowBet.sol — line 108
+// Privacy: event does NOT include \`option\`
+emit BetPlaced(marketId, msg.sender, msg.value);`}</code></pre>
+          <p className="pp-solidity-note">
+            The YES/NO choice is stored in contract storage but <em>never emitted</em>.
+            On-chain observers can see <em>that</em> a bet happened, but not <em>which side</em>.
+          </p>
+        </div>
+
+        <a
+          href={`${MONAD_TESTNET.blockExplorer}/address/${CONTRACT_ADDRESS}#events`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="pp-verify-link"
+        >
+          Verify on Monad Explorer &rarr;
+        </a>
       </div>
 
       <button className="connect-btn large pp-cta" onClick={onStart}>

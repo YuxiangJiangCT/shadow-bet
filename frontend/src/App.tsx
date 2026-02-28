@@ -5,6 +5,7 @@ import { HowItWorks } from "./HowItWorks";
 import { MarketCard } from "./MarketCard";
 import { PrivacyProof } from "./PrivacyProof";
 import { MONAD_TESTNET, CONTRACT_ADDRESS, SHADOWBET_ABI } from "./contract";
+import { useOnChainAudit } from "./useOnChainAudit";
 import "./App.css";
 
 declare global {
@@ -32,6 +33,7 @@ function App() {
   const [chainId, setChainId] = useState<number | null>(null);
   const [wrongNetwork, setWrongNetwork] = useState(false);
   const [publicMarkets, setPublicMarkets] = useState<MarketData[]>([]);
+  const { totalBets } = useOnChainAudit();
 
   const [page, setPage] = useState<"app" | "how" | "privacy">(
     window.location.hash === "#/how-it-works"
@@ -243,6 +245,11 @@ function App() {
               <img src="/logo.svg" alt="ShadowBet" className="hero-logo" />
               <h1 className="landing-title">Private Prediction Markets</h1>
               <p className="landing-subtitle">Your bets. Your secret. On Monad.</p>
+              {totalBets > 0 && (
+                <div className="landing-stats">
+                  <span className="stats-badge">{totalBets} private bets placed</span>
+                </div>
+              )}
               <button className="connect-btn large" onClick={connectWallet}>
                 {isMetaMaskInstalled ? "Connect Wallet" : "Install MetaMask"}
               </button>
