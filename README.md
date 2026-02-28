@@ -113,19 +113,61 @@ sequenceDiagram
 
 **Privacy feature:** The `BetPlaced` event intentionally omits the `option` field. Combined with burner addresses, neither your identity nor your position is revealed.
 
+## Privacy Model
+
+ShadowBet provides **two layers of privacy** that work together:
+
+### Layer 1: Identity Privacy (Unlink SDK)
+Your public wallet never touches the betting contract. Instead:
+- **Shield** deposits into a ZK-proof privacy pool (breaks the on-chain link)
+- **Burner EOA** — a fresh, anonymous account funded from the pool
+- The contract only sees the burner address, which cannot be traced back to you
+
+### Layer 2: Position Privacy (Smart Contract)
+Even if someone analyzes the burner address, they still can't determine your bet:
+- `BetPlaced` event **intentionally omits** the `option` field (YES/NO)
+- The bet direction is stored in contract storage but never emitted
+- An observer sees *"address X bet Y MON on market Z"* but not *which side*
+
+**Result:** Neither your identity nor your position is revealed on-chain.
+
+## Tests
+
+```
+$ forge test -vvv
+
+[PASS] testCreateMarket()          — market creation + state verification
+[PASS] testPlaceBetYes()           — YES bet updates yesPool correctly
+[PASS] testPlaceBetNo()            — NO bet updates noPool correctly
+[PASS] testResolveAndClaim()       — winner receives full pool
+[PASS] testFullLifecycle()         — end-to-end: create → bet → resolve → claim
+[PASS] testPrivacy_EventOmitsOption() — BetPlaced event has no option field
+[PASS] testRevert_NonAdminCreate() — only admin can create markets
+[PASS] testRevert_BetExpiredMarket() — cannot bet after endTime
+[PASS] testRevert_DoubleBet()      — one bet per address per market
+[PASS] testRevert_ClaimBeforeResolved() — cannot claim unresolved market
+[PASS] testRevert_LoserClaim()     — losing side cannot claim
+[PASS] testRevert_ResolveBeforeEnd() — cannot resolve before endTime
+
+Suite result: ok. 12 passed; 0 failed; 0 skipped
+```
+
 ## Development
 
 ```bash
-# Frontend
-cd frontend
-npm install
-npm run dev     # http://localhost:5173
+# Quick start
+make install    # install all dependencies
+make dev        # frontend dev server (http://localhost:5173)
 
-# Contract (Foundry)
-cd contracts
-forge build
-forge test
+# Contract
+make test       # run Foundry tests
+make deploy     # deploy to Monad testnet (set PRIVATE_KEY in .env)
+
+# Frontend
+make build      # production build
 ```
+
+See [`.env.example`](.env.example) for required environment variables.
 
 ## Hackathon
 
