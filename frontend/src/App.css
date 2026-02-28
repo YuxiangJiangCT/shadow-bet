@@ -204,12 +204,12 @@ body::before {
 }
 
 .landing-section-title {
-  font-size: 14px;
-  font-weight: 600;
-  color: rgba(255,255,255,0.4);
+  font-size: 16px;
+  font-weight: 700;
+  color: rgba(255,255,255,0.55);
   text-transform: uppercase;
-  letter-spacing: 1px;
-  margin-bottom: 12px;
+  letter-spacing: 1.5px;
+  margin-bottom: 14px;
   text-align: center;
 }
 
@@ -233,6 +233,12 @@ body::before {
   border-radius: 14px;
   padding: 20px 16px;
   text-align: center;
+  transition: all 0.2s ease;
+}
+
+.feature-card:hover {
+  border-color: rgba(124, 58, 237, 0.2);
+  transform: translateY(-2px);
 }
 
 .feature-icon {
@@ -384,7 +390,7 @@ body::before {
 .market-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 10px;
+  gap: 14px;
   margin-bottom: 16px;
 }
 
@@ -392,7 +398,7 @@ body::before {
   background: rgba(255,255,255,0.03);
   border: 1px solid rgba(255,255,255,0.08);
   border-radius: 14px;
-  padding: 14px;
+  padding: 16px;
   cursor: pointer;
   transition: all 0.2s ease;
 }
@@ -400,7 +406,8 @@ body::before {
 .market-card:hover {
   background: rgba(255,255,255,0.05);
   border-color: rgba(124, 58, 237, 0.3);
-  transform: translateY(-1px);
+  transform: translateY(-2px);
+  box-shadow: 0 0 15px rgba(124, 58, 237, 0.08);
 }
 
 .market-card.selected {
@@ -464,8 +471,8 @@ body::before {
 
 .card-odds-bar {
   display: flex;
-  height: 4px;
-  border-radius: 2px;
+  height: 6px;
+  border-radius: 3px;
   overflow: hidden;
   background: rgba(255,255,255,0.05);
   margin-bottom: 4px;
