@@ -91,6 +91,7 @@ export function BetWidget({ provider, account, initialMarket }: BetWidgetProps) 
   const [setupStep, setSetupStep] = useState<"loading" | "create" | "ready">("loading");
   const [burnerIndex, setBurnerIndex] = useState(0);
   const [lastTxHash, setLastTxHash] = useState<string | null>(null);
+  const [viewStep, setViewStep] = useState<"browse" | "bet" | "wallet">("browse");
 
   const privateBalance = balances[MON_TOKEN] ?? balances[MON_TOKEN.toLowerCase()] ?? 0n;
   const activeBurner = burners.find(b => b.index === burnerIndex);
@@ -144,7 +145,6 @@ export function BetWidget({ provider, account, initialMarket }: BetWidgetProps) 
         });
       }
       setMarkets(loaded);
-      setSelectedMarket((prev) => (prev === null && loaded.length > 0) ? 0 : prev);
     } catch (err) {
       console.error("Failed to load markets:", err);
     }
@@ -222,6 +222,7 @@ export function BetWidget({ provider, account, initialMarket }: BetWidgetProps) 
   useEffect(() => {
     if (initialMarket !== undefined && initialMarket !== null) {
       setSelectedMarket(initialMarket);
+      setViewStep("bet");
     }
   }, [initialMarket]);
 
@@ -341,6 +342,7 @@ export function BetWidget({ provider, account, initialMarket }: BetWidgetProps) 
 
       await loadBurnerBalance();
       await loadMyBets();
+      setViewStep("wallet");
       showStatus("Bet placed privately!", 8000);
     } catch (err: any) {
       const friendly = parseContractError(err);
@@ -479,7 +481,7 @@ export function BetWidget({ provider, account, initialMarket }: BetWidgetProps) 
     );
   }
 
-  // Step 2: Ready — full betting UI
+  // Step 2: Ready — multi-view betting UI
   return (
     <div className="bet-widget">
       {/* Header */}
@@ -488,272 +490,338 @@ export function BetWidget({ provider, account, initialMarket }: BetWidgetProps) 
         <span className="privacy-badge">UNLINK</span>
       </div>
 
-      {/* Balance Panel */}
-      <div className="balance-panel">
-        <div className="balance-row">
-          <span className="balance-label">Public</span>
-          <span className="balance-value">{fmtBal(publicBalance)} MON</span>
-        </div>
-        <div className="balance-row private">
-          <span className="balance-label">Private</span>
-          <span className="balance-value">{fmtBal(privateBalance)} MON</span>
-        </div>
-        {burnerAddr && burnerBalance > 0n && (
-          <div className="balance-row burner">
-            <span className="balance-label">Burner</span>
-            <span className="balance-value">{fmtBal(burnerBalance)} MON</span>
-          </div>
-        )}
-      </div>
-
-      {/* Shield */}
-      <div className="shield-section">
-        <div className="shield-row">
-          <input
-            type="text"
-            className="shield-input"
-            value={shieldAmount}
-            onChange={(e) => setShieldAmount(e.target.value)}
-            placeholder="Amount to shield"
-            disabled={isLoading}
-          />
-          <button className="shield-btn" onClick={handleShield} disabled={isLoading || !shieldAmount}>
-            Shield
+      {/* Compact Balance Bar — always visible */}
+      <div className="balance-bar">
+        <span>{fmtBal(publicBalance)} MON</span>
+        <span className="balance-bar-sep">|</span>
+        <span className="balance-bar-private">&#x1F512; {fmtBal(privateBalance)} MON</span>
+        <div className="balance-bar-actions">
+          <button
+            className={`bar-btn ${viewStep === "wallet" ? "active" : ""}`}
+            onClick={() => setViewStep("wallet")}
+          >
+            Wallet
           </button>
-        </div>
-        {privateBalance > 0n && (
-          <div className="shield-row" style={{ marginTop: 8 }}>
-            <input
-              type="text"
-              className="shield-input"
-              value={unshieldAmount}
-              onChange={(e) => setUnshieldAmount(e.target.value)}
-              placeholder={`Max: ${fmtBal(privateBalance)}`}
-              disabled={isLoading}
-            />
-            <button className="unshield-btn" onClick={handleUnshield} disabled={isLoading}>
-              {unshieldAmount ? "Unshield" : "Unshield All"}
+          {myBets.length > 0 && (
+            <button
+              className={`bar-btn ${viewStep === "wallet" ? "active" : ""}`}
+              onClick={() => setViewStep("wallet")}
+            >
+              My Bets <span className="bar-badge">{myBets.length}</span>
             </button>
-          </div>
-        )}
-      </div>
-
-      {/* Admin: Create Market */}
-      {isAdmin && (
-        <div className="admin-panel">
-          <div className="admin-panel-header" onClick={() => setAdminOpen(!adminOpen)}>
-            <span>Admin: Create Market</span>
-            <span>{adminOpen ? "\u25B2" : "\u25BC"}</span>
-          </div>
-          {adminOpen && (
-            <div className="admin-panel-body">
-              <input
-                type="text"
-                className="shield-input"
-                value={newQuestion}
-                onChange={(e) => setNewQuestion(e.target.value)}
-                placeholder="Market question, e.g. Will MON hit $10?"
-                disabled={isLoading}
-              />
-              <div className="admin-duration-btns">
-                {[
-                  { label: "10m Demo", val: 600 },
-                  { label: "1 Day", val: 86400 },
-                  { label: "3 Days", val: 259200 },
-                  { label: "7 Days", val: 604800 },
-                ].map((d) => (
-                  <button
-                    key={d.val}
-                    className={`quick-btn ${newDuration === d.val ? "selected" : ""}`}
-                    onClick={() => setNewDuration(d.val)}
-                  >
-                    {d.label}
-                  </button>
-                ))}
-              </div>
-              <div className="admin-end-preview">
-                Ends: {new Date(Date.now() + newDuration * 1000).toLocaleString()}
-              </div>
-              <button
-                className="connect-btn"
-                onClick={handleCreateMarket}
-                disabled={isLoading || !newQuestion.trim()}
-              >
-                {isLoading ? <><span className="spinner" />Creating...</> : "Create Market"}
-              </button>
-            </div>
           )}
         </div>
-      )}
+      </div>
 
-      {/* Market Grid */}
-      {markets.length > 0 ? (
-        <div className="market-grid">
-          {markets.map((m) => (
-            <MarketCard
-              key={m.id}
-              market={m}
-              selected={selectedMarket === m.id}
-              onClick={() => setSelectedMarket(m.id)}
-            />
-          ))}
-        </div>
-      ) : (
-        <div className="no-markets">No markets yet</div>
-      )}
-
-      {/* My Bets Panel */}
-      {myBets.length > 0 && (
-        <div className="my-bets">
-          <div className="my-bets-header">
-            <h3>My Bets</h3>
-            <span className="my-bets-count">{myBets.length}</span>
-          </div>
-          {myBets.map((bet, i) => {
-            const m = markets.find((mk) => mk.id === bet.marketId);
-            const status = bet.claimed
-              ? "claimed"
-              : m?.resolved && bet.option === m.winningOption
-              ? "won"
-              : m?.resolved
-              ? "lost"
-              : "active";
-            return (
-              <div key={i} className={`my-bets-row ${status}`}>
-                <div className="my-bets-market">
-                  <span className="my-bets-question">
-                    {m ? (m.question.length > 40 ? m.question.slice(0, 40) + "..." : m.question) : `Market #${bet.marketId}`}
-                  </span>
-                  <span className="my-bets-burner">
-                    via {bet.burnerAddr.slice(0, 6)}...{bet.burnerAddr.slice(-4)}
-                  </span>
-                </div>
-                <div className="my-bets-info">
-                  <span className="my-bets-option">{bet.option === 0 ? "YES" : "NO"}</span>
-                  <span className="my-bets-amount">{fmtBal(bet.amount)} MON</span>
-                  <span className={`my-bets-status ${status}`}>
-                    {status === "claimed" ? "Claimed" : status === "won" ? "Won" : status === "lost" ? "Lost" : "Active"}
-                  </span>
-                  {status === "won" && (
-                    <button className="my-bets-claim" onClick={() => handleClaim(bet.marketId)} disabled={isLoading}>
-                      Claim
-                    </button>
-                  )}
-                </div>
+      {/* ===== VIEW: Browse Markets ===== */}
+      {viewStep === "browse" && (
+        <div className="view-content">
+          {/* Admin: Create Market */}
+          {isAdmin && (
+            <div className="admin-panel">
+              <div className="admin-panel-header" onClick={() => setAdminOpen(!adminOpen)}>
+                <span>Admin: Create Market</span>
+                <span>{adminOpen ? "\u25B2" : "\u25BC"}</span>
               </div>
-            );
-          })}
-        </div>
-      )}
-
-      {/* Market Info */}
-      {market && (
-        <>
-          <div className="market-question">
-            <p>{market.question}</p>
-            <div className="market-meta">
-              <span className={`market-status ${market.resolved ? "resolved" : isActive ? "active" : "ended"}`}>
-                {market.resolved ? `Resolved: ${market.winningOption === 0 ? "YES" : "NO"}` : isActive ? "Active" : "Ended"}
-              </span>
-              <span className="market-time">
-                {isActive
-                  ? `Ends: ${new Date(market.endTime * 1000).toLocaleString()}`
-                  : market.resolved ? "Settled" : "Betting closed"}
-              </span>
-            </div>
-          </div>
-
-          {/* Odds Bar */}
-          <div className="odds-section">
-            <div className="odds-labels">
-              <span className="yes-label">YES {yesPercent.toFixed(1)}%</span>
-              <span className="pool-total">{fmtBal(totalPool)} MON</span>
-              <span className="no-label">NO {noPercent.toFixed(1)}%</span>
-            </div>
-            <div className="odds-bar">
-              <div className="odds-yes" style={{ width: `${yesPercent}%` }} />
-              <div className="odds-no" style={{ width: `${noPercent}%` }} />
-            </div>
-          </div>
-
-          {/* Betting Section */}
-          {isActive && (
-            <div className="bet-section">
-              <div className="option-buttons">
-                <button
-                  className={`option-btn yes ${selectedOption === 0 ? "selected" : ""}`}
-                  onClick={() => setSelectedOption(0)}
-                >
-                  YES
-                </button>
-                <button
-                  className={`option-btn no ${selectedOption === 1 ? "selected" : ""}`}
-                  onClick={() => setSelectedOption(1)}
-                >
-                  NO
-                </button>
-              </div>
-
-              <div className="amount-section">
-                <label className="amount-label">Bet Amount (MON)</label>
-                <div className="amount-row">
+              {adminOpen && (
+                <div className="admin-panel-body">
                   <input
                     type="text"
-                    className="amount-input"
-                    value={betAmount}
-                    onChange={(e) => setBetAmount(e.target.value)}
-                    placeholder="0.0"
+                    className="shield-input"
+                    value={newQuestion}
+                    onChange={(e) => setNewQuestion(e.target.value)}
+                    placeholder="Market question, e.g. Will MON hit $10?"
                     disabled={isLoading}
                   />
-                  <div className="quick-amounts">
-                    {["0.01", "0.1", "1"].map((amt) => (
-                      <button key={amt} className="quick-btn" onClick={() => setBetAmount(amt)}>
-                        {amt}
+                  <div className="admin-duration-btns">
+                    {[
+                      { label: "10m Demo", val: 600 },
+                      { label: "1 Day", val: 86400 },
+                      { label: "3 Days", val: 259200 },
+                      { label: "7 Days", val: 604800 },
+                    ].map((d) => (
+                      <button
+                        key={d.val}
+                        className={`quick-btn ${newDuration === d.val ? "selected" : ""}`}
+                        onClick={() => setNewDuration(d.val)}
+                      >
+                        {d.label}
                       </button>
                     ))}
                   </div>
+                  <div className="admin-end-preview">
+                    Ends: {new Date(Date.now() + newDuration * 1000).toLocaleString()}
+                  </div>
+                  <button
+                    className="connect-btn"
+                    onClick={handleCreateMarket}
+                    disabled={isLoading || !newQuestion.trim()}
+                  >
+                    {isLoading ? <><span className="spinner" />Creating...</> : "Create Market"}
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Market Grid */}
+          {markets.length > 0 ? (
+            <div className="market-grid">
+              {markets.map((m) => (
+                <MarketCard
+                  key={m.id}
+                  market={m}
+                  selected={selectedMarket === m.id}
+                  onClick={() => {
+                    setSelectedMarket(m.id);
+                    setViewStep("bet");
+                  }}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="no-markets">No markets yet</div>
+          )}
+        </div>
+      )}
+
+      {/* ===== VIEW: Place Bet ===== */}
+      {viewStep === "bet" && (
+        <div className="view-content">
+          <button className="step-back" onClick={() => setViewStep("browse")}>
+            &#8592; All Markets
+          </button>
+
+          {market ? (
+            <>
+              <div className="market-question">
+                <p>{market.question}</p>
+                <div className="market-meta">
+                  <span className={`market-status ${market.resolved ? "resolved" : isActive ? "active" : "ended"}`}>
+                    {market.resolved ? `Resolved: ${market.winningOption === 0 ? "YES" : "NO"}` : isActive ? "Active" : "Ended"}
+                  </span>
+                  <span className="market-time">
+                    {isActive
+                      ? `Ends: ${new Date(market.endTime * 1000).toLocaleString()}`
+                      : market.resolved ? "Settled" : "Betting closed"}
+                  </span>
                 </div>
               </div>
 
-              {/* Privacy Notice */}
-              <div className="privacy-notice">
-                <span className="lock-icon">&#x1F512;</span>
-                <span>
-                  {burnerAddr
-                    ? `Betting from anonymous address ${burnerAddr.slice(0, 6)}...${burnerAddr.slice(-4)}`
-                    : "Your bet will be placed from an anonymous burner address"}
-                </span>
+              {/* Odds Bar */}
+              <div className="odds-section">
+                <div className="odds-labels">
+                  <span className="yes-label">YES {yesPercent.toFixed(1)}%</span>
+                  <span className="pool-total">{fmtBal(totalPool)} MON</span>
+                  <span className="no-label">NO {noPercent.toFixed(1)}%</span>
+                </div>
+                <div className="odds-bar">
+                  <div className="odds-yes" style={{ width: `${yesPercent}%` }} />
+                  <div className="odds-no" style={{ width: `${noPercent}%` }} />
+                </div>
               </div>
 
-              <button
-                className="place-bet-btn"
-                onClick={handlePlaceBet}
-                disabled={isLoading || selectedOption === null || !betAmount || parseFloat(betAmount) <= 0 || privateBalance <= 0n}
-              >
-                {isLoading ? <><span className="spinner" />Processing...</> : privateBalance <= 0n ? "Shield MON first" : selectedOption === null ? "Select YES or NO" : "Place Private Bet"}
-              </button>
-            </div>
-          )}
+              {/* Betting Section */}
+              {isActive && (
+                <div className="bet-section">
+                  <div className="option-buttons">
+                    <button
+                      className={`option-btn yes ${selectedOption === 0 ? "selected" : ""}`}
+                      onClick={() => setSelectedOption(0)}
+                    >
+                      YES
+                    </button>
+                    <button
+                      className={`option-btn no ${selectedOption === 1 ? "selected" : ""}`}
+                      onClick={() => setSelectedOption(1)}
+                    >
+                      NO
+                    </button>
+                  </div>
 
-          {/* Claim Section */}
-          {market.resolved && (
-            <div className="claim-section">
-              <button className="claim-btn" onClick={() => handleClaim(market.id)} disabled={isLoading}>
-                {isLoading ? <><span className="spinner" />Claiming...</> : "Claim & Re-shield"}
-              </button>
-            </div>
+                  <div className="amount-section">
+                    <label className="amount-label">Bet Amount (MON)</label>
+                    <div className="amount-row">
+                      <input
+                        type="text"
+                        className="amount-input"
+                        value={betAmount}
+                        onChange={(e) => setBetAmount(e.target.value)}
+                        placeholder="0.0"
+                        disabled={isLoading}
+                      />
+                      <div className="quick-amounts">
+                        {["0.01", "0.1", "1"].map((amt) => (
+                          <button key={amt} className="quick-btn" onClick={() => setBetAmount(amt)}>
+                            {amt}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Privacy Notice */}
+                  <div className="privacy-notice">
+                    <span className="lock-icon">&#x1F512;</span>
+                    <span>
+                      {burnerAddr
+                        ? `Betting from anonymous address ${burnerAddr.slice(0, 6)}...${burnerAddr.slice(-4)}`
+                        : "Your bet will be placed from an anonymous burner address"}
+                    </span>
+                  </div>
+
+                  {privateBalance <= 0n ? (
+                    <button
+                      className="place-bet-btn"
+                      onClick={() => setViewStep("wallet")}
+                    >
+                      Shield MON first &#8594;
+                    </button>
+                  ) : (
+                    <button
+                      className="place-bet-btn"
+                      onClick={handlePlaceBet}
+                      disabled={isLoading || selectedOption === null || !betAmount || parseFloat(betAmount) <= 0}
+                    >
+                      {isLoading ? <><span className="spinner" />Processing...</> : selectedOption === null ? "Select YES or NO" : "Place Private Bet"}
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {/* Claim Section */}
+              {market.resolved && (
+                <div className="claim-section">
+                  <button className="claim-btn" onClick={() => handleClaim(market.id)} disabled={isLoading}>
+                    {isLoading ? <><span className="spinner" />Claiming...</> : "Claim & Re-shield"}
+                  </button>
+                </div>
+              )}
+            </>
+          ) : (
+            <div className="no-markets">Select a market to place a bet</div>
           )}
-        </>
+        </div>
       )}
 
-      {/* Unlink Error */}
+      {/* ===== VIEW: Wallet ===== */}
+      {viewStep === "wallet" && (
+        <div className="view-content">
+          <button className="step-back" onClick={() => setViewStep("browse")}>
+            &#8592; Back
+          </button>
+
+          {/* Full Balance Panel */}
+          <div className="balance-panel">
+            <div className="balance-row">
+              <span className="balance-label">Public</span>
+              <span className="balance-value">{fmtBal(publicBalance)} MON</span>
+            </div>
+            <div className="balance-row private">
+              <span className="balance-label">Private</span>
+              <span className="balance-value">{fmtBal(privateBalance)} MON</span>
+            </div>
+            {burnerAddr && burnerBalance > 0n && (
+              <div className="balance-row burner">
+                <span className="balance-label">Burner</span>
+                <span className="balance-value">{fmtBal(burnerBalance)} MON</span>
+              </div>
+            )}
+          </div>
+
+          {/* Shield/Unshield */}
+          <div className="shield-section">
+            <div className="shield-row">
+              <input
+                type="text"
+                className="shield-input"
+                value={shieldAmount}
+                onChange={(e) => setShieldAmount(e.target.value)}
+                placeholder="Amount to shield"
+                disabled={isLoading}
+              />
+              <button className="shield-btn" onClick={handleShield} disabled={isLoading || !shieldAmount}>
+                Shield
+              </button>
+            </div>
+            {privateBalance > 0n && (
+              <div className="shield-row" style={{ marginTop: 8 }}>
+                <input
+                  type="text"
+                  className="shield-input"
+                  value={unshieldAmount}
+                  onChange={(e) => setUnshieldAmount(e.target.value)}
+                  placeholder={`Max: ${fmtBal(privateBalance)}`}
+                  disabled={isLoading}
+                />
+                <button className="unshield-btn" onClick={handleUnshield} disabled={isLoading}>
+                  {unshieldAmount ? "Unshield" : "Unshield All"}
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* My Bets */}
+          {myBets.length > 0 ? (
+            <div className="my-bets">
+              <div className="my-bets-header">
+                <h3>My Bets</h3>
+                <span className="my-bets-count">{myBets.length}</span>
+              </div>
+              {myBets.map((bet, i) => {
+                const m = markets.find((mk) => mk.id === bet.marketId);
+                const status = bet.claimed
+                  ? "claimed"
+                  : m?.resolved && bet.option === m.winningOption
+                  ? "won"
+                  : m?.resolved
+                  ? "lost"
+                  : "active";
+                return (
+                  <div key={i} className={`my-bets-row ${status}`}>
+                    <div className="my-bets-market">
+                      <span className="my-bets-question">
+                        {m ? (m.question.length > 40 ? m.question.slice(0, 40) + "..." : m.question) : `Market #${bet.marketId}`}
+                      </span>
+                      <span className="my-bets-burner">
+                        via {bet.burnerAddr.slice(0, 6)}...{bet.burnerAddr.slice(-4)}
+                      </span>
+                    </div>
+                    <div className="my-bets-info">
+                      <span className="my-bets-option">{bet.option === 0 ? "YES" : "NO"}</span>
+                      <span className="my-bets-amount">{fmtBal(bet.amount)} MON</span>
+                      <span className={`my-bets-status ${status}`}>
+                        {status === "claimed" ? "Claimed" : status === "won" ? "Won" : status === "lost" ? "Lost" : "Active"}
+                      </span>
+                      {status === "won" && (
+                        <button className="my-bets-claim" onClick={() => handleClaim(bet.marketId)} disabled={isLoading}>
+                          Claim
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="wallet-empty-state">
+              <p>No bets yet</p>
+              <p style={{ marginTop: 8, fontSize: 12, opacity: 0.5 }}>
+                Place your first private bet to see it here
+              </p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Unlink Error — always visible */}
       {unlinkError && (
         <div className="tx-status error" onClick={clearError} style={{ cursor: "pointer" }}>
           {unlinkError.message} (click to dismiss)
         </div>
       )}
 
-      {/* Transaction Status */}
+      {/* Transaction Status — always visible */}
       {txStatus && (
         <div className="tx-status">
           {txStatus}
