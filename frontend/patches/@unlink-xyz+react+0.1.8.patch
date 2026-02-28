@@ -1,0 +1,23 @@
+diff --git a/node_modules/@unlink-xyz/react/dist/index.js b/node_modules/@unlink-xyz/react/dist/index.js
+index dc54a49..bc1ca48 100644
+--- a/node_modules/@unlink-xyz/react/dist/index.js
++++ b/node_modules/@unlink-xyz/react/dist/index.js
+@@ -57275,15 +57275,18 @@ function UnlinkProvider({
+           ...prev2,
+           status: "Initializing SDK..."
+         }));
++        const chainRpcUrlProp = "chainRpcUrl" in configProps ? configProps.chainRpcUrl : void 0;
+         const unlink = await Unlink.create(
+           chain2 ? {
+             chain: chain2,
+             poolAddress,
++            ...chainRpcUrlProp ? { chainRpcUrl: chainRpcUrlProp } : {},
+             ...prover ? { prover } : {}
+           } : {
+             chainId,
+             gatewayUrl,
+             poolAddress,
++            ...chainRpcUrlProp ? { chainRpcUrl: chainRpcUrlProp } : {},
+             ...prover ? { prover } : {}
+           }
+         );
