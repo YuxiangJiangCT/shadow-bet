@@ -100,7 +100,15 @@ function App() {
           }
         }
       }
-      setPublicMarkets(loaded);
+      // Deduplicate by question (keep first occurrence = lower ID)
+      const seen = new Set<string>();
+      const unique = loaded.filter(m => {
+        const key = m.question.trim().toLowerCase();
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+      setPublicMarkets(unique);
     } catch (err) {
       console.error("Failed to load public markets:", err);
     }
