@@ -55,7 +55,7 @@ export function BetWidget({ provider, account }: BetWidgetProps) {
   const [mnemonic, setMnemonic] = useState<string | null>(null);
   const [setupStep, setSetupStep] = useState<"loading" | "create" | "ready">("loading");
 
-  const privateBalance = balances[MON_TOKEN] ?? 0n;
+  const privateBalance = balances[MON_TOKEN] ?? balances[MON_TOKEN.toLowerCase()] ?? 0n;
   const burnerAddr = burners.length > 0 ? burners[0].address : null;
 
   // --- Status helper ---
