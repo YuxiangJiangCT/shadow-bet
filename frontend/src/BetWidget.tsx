@@ -502,7 +502,7 @@ export function BetWidget({ provider, account, initialMarket, requestedView, onV
   }
 
   // --- Derived values ---
-  const market = selectedMarket !== null ? markets[selectedMarket] : null;
+  const market = selectedMarket !== null ? markets.find(m => m.id === selectedMarket) ?? null : null;
   const totalPool = market ? market.yesPool + market.noPool : 0n;
   const yesPercent = totalPool > 0n && market ? Number((market.yesPool * 10000n) / totalPool) / 100 : 50;
   const noPercent = totalPool > 0n ? 100 - yesPercent : 50;
