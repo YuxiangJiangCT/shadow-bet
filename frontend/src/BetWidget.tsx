@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { ethers } from "ethers";
-import { useUnlink, useBurner, formatAmount } from "@unlink-xyz/react";
+import { useUnlink, useBurner } from "@unlink-xyz/react";
 import { SHADOWBET_ABI, CONTRACT_ADDRESS, MON_TOKEN } from "./contract";
 
 interface Market {
@@ -20,6 +20,14 @@ interface BetWidgetProps {
 
 const BURNER_INDEX = 0;
 const iface = new ethers.Interface(SHADOWBET_ABI);
+
+/** Format wei to readable string with max 4 decimal places */
+function fmtBal(wei: bigint, decimals = 18): string {
+  const str = ethers.formatUnits(wei, decimals);
+  const [int, dec] = str.split(".");
+  if (!dec) return int;
+  return `${int}.${dec.slice(0, 4)}`;
+}
 
 export function BetWidget({ provider, account }: BetWidgetProps) {
   // --- Market state ---
@@ -337,16 +345,16 @@ export function BetWidget({ provider, account }: BetWidgetProps) {
       <div className="balance-panel">
         <div className="balance-row">
           <span className="balance-label">Public</span>
-          <span className="balance-value">{formatAmount(publicBalance, 18)} MON</span>
+          <span className="balance-value">{fmtBal(publicBalance)} MON</span>
         </div>
         <div className="balance-row private">
           <span className="balance-label">Private</span>
-          <span className="balance-value">{formatAmount(privateBalance, 18)} MON</span>
+          <span className="balance-value">{fmtBal(privateBalance)} MON</span>
         </div>
         {burnerAddr && burnerBalance > 0n && (
           <div className="balance-row burner">
             <span className="balance-label">Burner</span>
-            <span className="balance-value">{formatAmount(burnerBalance, 18)} MON</span>
+            <span className="balance-value">{fmtBal(burnerBalance)} MON</span>
           </div>
         )}
       </div>
