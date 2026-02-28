@@ -49,6 +49,9 @@ export const SHADOWBET_ABI = [
   "event Claimed(uint256 indexed id, address indexed user, uint256 amount)",
 ];
 
+/** Known admin address — used for UI-only visibility (on-chain still enforces onlyAdmin) */
+export const KNOWN_ADMIN = "0x9b50ED6a40e98215b2d2da5CE2E948c28AB7eCF5";
+
 /** Map custom error names to user-friendly messages */
 export const ERROR_MESSAGES: Record<string, string> = {
   AlreadyBet: "You already placed a bet on this market",

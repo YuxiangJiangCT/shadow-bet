@@ -5,7 +5,7 @@ import { HowItWorks } from "./HowItWorks";
 import { MarketCard } from "./MarketCard";
 import { MarketDetail } from "./MarketDetail";
 import { PrivacyProof } from "./PrivacyProof";
-import { MONAD_TESTNET, CONTRACT_ADDRESS, SHADOWBET_ABI } from "./contract";
+import { MONAD_TESTNET, CONTRACT_ADDRESS, SHADOWBET_ABI, KNOWN_ADMIN } from "./contract";
 import { useOnChainAudit } from "./useOnChainAudit";
 import "./App.css";
 
@@ -48,8 +48,10 @@ function App() {
   const [page, setPage] = useState<"app" | "how" | "privacy" | "market">(initialRoute.page);
   const [marketId, setMarketId] = useState<number | null>(initialRoute.marketId);
   const [initialMarket, setInitialMarket] = useState<number | null>(null);
+  const [widgetView, setWidgetView] = useState<string | null>(null);
 
   const isMetaMaskInstalled = typeof window.ethereum !== "undefined";
+  const isAdmin = account?.toLowerCase() === KNOWN_ADMIN.toLowerCase();
 
   const navigateTo = (p: "app" | "how" | "privacy" | "market", id?: number) => {
     setPage(p);
@@ -221,6 +223,22 @@ function App() {
           >
             Privacy Proof
           </button>
+          {account && isAdmin && (
+            <button
+              className="nav-link"
+              onClick={() => { setWidgetView("admin"); navigateTo("app"); }}
+            >
+              Create Market
+            </button>
+          )}
+          {account && (
+            <button
+              className="nav-link"
+              onClick={() => { setWidgetView("wallet"); navigateTo("app"); }}
+            >
+              Wallet
+            </button>
+          )}
           {!account ? (
             <button className="connect-btn" onClick={connectWallet}>
               {isMetaMaskInstalled ? "Connect Wallet" : "Install MetaMask"}
@@ -343,7 +361,7 @@ function App() {
             </div>
           </div>
         ) : (
-          <BetWidget provider={provider!} account={account} initialMarket={initialMarket} />
+          <BetWidget provider={provider!} account={account} initialMarket={initialMarket} requestedView={widgetView} onViewChanged={() => setWidgetView(null)} />
         )}
       </main>
 

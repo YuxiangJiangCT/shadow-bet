@@ -2239,14 +2239,13 @@ body::before {
   color: #a78bfa;
 }
 
-/* Persistent header card (always visible in ready state) */
+/* Balance-only bar (no header, no nav buttons in ready state) */
 .widget-top {
-  background: rgba(22, 18, 32, 0.8);
-  backdrop-filter: blur(12px);
-  border-radius: 16px;
-  padding: 20px;
+  background: rgba(22, 18, 32, 0.6);
+  backdrop-filter: blur(8px);
+  border-radius: 10px;
+  padding: 0;
   border: 1px solid rgba(255,255,255,0.06);
-  box-shadow: 0 8px 40px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.06);
   margin-bottom: 16px;
 }
 
@@ -2301,6 +2300,6 @@ body::before {
   .my-bets-info { width: 100%; justify-content: flex-start; flex-wrap: wrap; }
   .balance-bar { font-size: 11px; gap: 6px; padding: 6px 10px; flex-wrap: wrap; }
   .bar-btn { font-size: 10px; padding: 3px 8px; }
-  .widget-top { padding: 14px; border-radius: 14px; }
+  .widget-top { border-radius: 8px; }
   .view-card { padding: 16px; border-radius: 14px; max-width: 100%; }
 }

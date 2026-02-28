@@ -18,6 +18,8 @@ interface BetWidgetProps {
   provider: ethers.BrowserProvider;
   account: string;
   initialMarket?: number | null;
+  requestedView?: string | null;
+  onViewChanged?: () => void;
 }
 
 interface MyBet {
@@ -63,7 +65,7 @@ function fmtBal(wei: bigint, decimals = 18): string {
   return `${int}.${dec.slice(0, 4)}`;
 }
 
-export function BetWidget({ provider, account, initialMarket }: BetWidgetProps) {
+export function BetWidget({ provider, account, initialMarket, requestedView, onViewChanged }: BetWidgetProps) {
   // --- Market state ---
   const [markets, setMarkets] = useState<Market[]>([]);
   const [selectedMarket, setSelectedMarket] = useState<number | null>(initialMarket ?? null);
@@ -97,7 +99,6 @@ export function BetWidget({ provider, account, initialMarket }: BetWidgetProps) 
   const activeBurner = burners.find(b => b.index === burnerIndex);
 
   // --- Admin state ---
-  const [isAdmin, setIsAdmin] = useState(false);
   const [newQuestion, setNewQuestion] = useState("");
   const [newEndTime, setNewEndTime] = useState(() => {
     const d = new Date(Date.now() + 259200 * 1000); // default 3 days
@@ -176,23 +177,6 @@ export function BetWidget({ provider, account, initialMarket }: BetWidgetProps) 
     } catch { /* ignore */ }
   }, [burners, markets, provider]);
 
-  // --- Check admin ---
-  useEffect(() => {
-    async function checkAdmin() {
-      try {
-        const contract = new ethers.Contract(CONTRACT_ADDRESS, SHADOWBET_ABI, provider);
-        const adminAddr = await contract.admin();
-        setIsAdmin(adminAddr.toLowerCase() === account.toLowerCase());
-      } catch {
-        // Fallback: if RPC fails (429 rate limit), check known admin address
-        // Contract still enforces onlyAdmin on-chain, this only controls UI visibility
-        const KNOWN_ADMIN = "0x9b50ED6a40e98215b2d2da5CE2E948c28AB7eCF5";
-        setIsAdmin(account.toLowerCase() === KNOWN_ADMIN.toLowerCase());
-      }
-    }
-    checkAdmin();
-  }, [provider, account]);
-
   // --- Create market (admin) ---
   const handleCreateMarket = async () => {
     if (!newQuestion.trim()) return;
@@ -227,6 +211,14 @@ export function BetWidget({ provider, account, initialMarket }: BetWidgetProps) 
       setViewStep("bet");
     }
   }, [initialMarket]);
+
+  // Sync requestedView from App nav
+  useEffect(() => {
+    if (requestedView === "wallet" || requestedView === "admin") {
+      setViewStep(requestedView);
+      onViewChanged?.();
+    }
+  }, [requestedView]);
 
   // --- Determine setup step ---
   useEffect(() => {
@@ -444,10 +436,6 @@ export function BetWidget({ provider, account, initialMarket }: BetWidgetProps) 
     return (
       <div className="bet-widget">
         <div className="view-card">
-          <div className="widget-header">
-            <h2>SHADOWBET</h2>
-            <span className="privacy-badge">PRIVACY</span>
-          </div>
           <div className="connect-prompt">
             <span className="spinner" />
             <p>Initializing privacy engine...</p>
@@ -461,10 +449,6 @@ export function BetWidget({ provider, account, initialMarket }: BetWidgetProps) 
     return (
       <div className="bet-widget">
         <div className="view-card">
-          <div className="widget-header">
-            <h2>SHADOWBET</h2>
-            <span className="privacy-badge">PRIVACY</span>
-          </div>
           <div className="connect-prompt">
             <h3>Setup Private Wallet</h3>
             <p>Create an Unlink private account to make anonymous bets on Monad.</p>
@@ -490,44 +474,14 @@ export function BetWidget({ provider, account, initialMarket }: BetWidgetProps) 
   // Step 2: Ready — multi-view betting UI
   return (
     <div className="bet-widget">
-      {/* Persistent Header Card */}
+      {/* Balance Bar — pure display, no nav buttons */}
       <div className="widget-top">
-        <div className="widget-header">
-          <h2>SHADOWBET</h2>
-          <span className="privacy-badge">UNLINK</span>
-        </div>
-
-        {/* Compact Balance Bar */}
         <div className="balance-bar">
-        <span>{fmtBal(publicBalance)} MON</span>
-        <span className="balance-bar-sep">|</span>
-        <span className="balance-bar-private">&#x1F512; {fmtBal(privateBalance)} MON</span>
-        <div className="balance-bar-actions">
-          {isAdmin && (
-            <button
-              className={`bar-btn ${viewStep === "admin" ? "active" : ""}`}
-              onClick={() => setViewStep("admin")}
-            >
-              Admin
-            </button>
-          )}
-          <button
-            className={`bar-btn ${viewStep === "wallet" ? "active" : ""}`}
-            onClick={() => setViewStep("wallet")}
-          >
-            Wallet
-          </button>
-          {myBets.length > 0 && (
-            <button
-              className={`bar-btn ${viewStep === "wallet" ? "active" : ""}`}
-              onClick={() => setViewStep("wallet")}
-            >
-              My Bets <span className="bar-badge">{myBets.length}</span>
-            </button>
-          )}
+          <span>{fmtBal(publicBalance)} MON</span>
+          <span className="balance-bar-sep">|</span>
+          <span className="balance-bar-private">&#x1F512; {fmtBal(privateBalance)} MON</span>
         </div>
       </div>
-      </div>{/* /widget-top */}
 
       {/* ===== VIEW: Browse Markets ===== */}
       {viewStep === "browse" && (
