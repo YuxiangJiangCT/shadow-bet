@@ -1,8 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { ethers } from "ethers";
 import { BetWidget } from "./BetWidget";
 import { HowItWorks } from "./HowItWorks";
-import { MONAD_TESTNET } from "./contract";
+import { MarketCard } from "./MarketCard";
+import { MONAD_TESTNET, CONTRACT_ADDRESS, SHADOWBET_ABI } from "./contract";
 import "./App.css";
 
 declare global {
@@ -11,31 +12,81 @@ declare global {
   }
 }
 
+interface MarketData {
+  id: number;
+  question: string;
+  endTime: number;
+  yesPool: bigint;
+  noPool: bigint;
+  resolved: boolean;
+  winningOption: number;
+}
+
+// Public RPC provider for read-only access (no wallet needed)
+const publicProvider = new ethers.JsonRpcProvider(MONAD_TESTNET.rpcUrl);
+
 function App() {
   const [account, setAccount] = useState<string | null>(null);
   const [provider, setProvider] = useState<ethers.BrowserProvider | null>(null);
   const [chainId, setChainId] = useState<number | null>(null);
   const [wrongNetwork, setWrongNetwork] = useState(false);
+  const [publicMarkets, setPublicMarkets] = useState<MarketData[]>([]);
 
-  const [page, setPage] = useState<"app" | "how">(
-    window.location.hash === "#/how-it-works" ? "how" : "app"
+  const [page, setPage] = useState<"app" | "how" | "privacy">(
+    window.location.hash === "#/how-it-works"
+      ? "how"
+      : window.location.hash === "#/privacy-proof"
+      ? "privacy"
+      : "app"
   );
 
   const isMetaMaskInstalled = typeof window.ethereum !== "undefined";
 
-  const navigateTo = (p: "app" | "how") => {
+  const navigateTo = (p: "app" | "how" | "privacy") => {
     setPage(p);
-    window.location.hash = p === "how" ? "#/how-it-works" : "#/";
+    const hashes = { app: "#/", how: "#/how-it-works", privacy: "#/privacy-proof" };
+    window.location.hash = hashes[p];
   };
 
   // Listen for hash changes
   useEffect(() => {
     const onHash = () => {
-      setPage(window.location.hash === "#/how-it-works" ? "how" : "app");
+      const h = window.location.hash;
+      setPage(
+        h === "#/how-it-works" ? "how" : h === "#/privacy-proof" ? "privacy" : "app"
+      );
     };
     window.addEventListener("hashchange", onHash);
     return () => window.removeEventListener("hashchange", onHash);
   }, []);
+
+  // Load markets from public RPC (no wallet required)
+  const loadPublicMarkets = useCallback(async () => {
+    try {
+      const contract = new ethers.Contract(CONTRACT_ADDRESS, SHADOWBET_ABI, publicProvider);
+      const count = await contract.marketCount();
+      const loaded: MarketData[] = [];
+      for (let i = 0; i < Number(count); i++) {
+        const m = await contract.getMarket(i);
+        loaded.push({
+          id: i,
+          question: m.question,
+          endTime: Number(m.endTime),
+          yesPool: m.yesPool,
+          noPool: m.noPool,
+          resolved: m.resolved,
+          winningOption: Number(m.winningOption),
+        });
+      }
+      setPublicMarkets(loaded);
+    } catch (err) {
+      console.error("Failed to load public markets:", err);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadPublicMarkets();
+  }, [loadPublicMarkets]);
 
   const switchToMonad = async () => {
     try {
@@ -44,7 +95,6 @@ function App() {
         params: [{ chainId: MONAD_TESTNET.chainIdHex }],
       });
     } catch (switchError: any) {
-      // Chain not added yet — add it
       if (switchError.code === 4902) {
         await window.ethereum.request({
           method: "wallet_addEthereumChain",
@@ -139,7 +189,7 @@ function App() {
     <div className="app-container">
       {/* Nav */}
       <nav className="nav-bar">
-        <div className="nav-logo">
+        <div className="nav-logo" onClick={() => navigateTo("app")} style={{ cursor: "pointer" }}>
           <img src="/logo.svg" alt="ShadowBet" className="nav-logo-img" />
           <span className="logo-text">ShadowBet</span>
           <span className="chain-badge">MONAD</span>
@@ -151,6 +201,12 @@ function App() {
             onClick={() => navigateTo("how")}
           >
             How It Works
+          </button>
+          <button
+            className={`nav-link ${page === "privacy" ? "active" : ""}`}
+            onClick={() => navigateTo("privacy")}
+          >
+            Privacy Proof
           </button>
           {!account ? (
             <button className="connect-btn" onClick={connectWallet}>
@@ -176,22 +232,69 @@ function App() {
       <main className="main-content">
         {page === "how" ? (
           <HowItWorks onStart={() => navigateTo("app")} />
+        ) : page === "privacy" ? (
+          <div /> /* PrivacyProof placeholder — Block 5 */
         ) : !account ? (
-          <div className="bet-widget">
-            <div className="widget-header">
-              <h2>SHADOWBET</h2>
-              <span className="privacy-badge">PRIVACY</span>
-            </div>
-            <div className="connect-prompt">
+          /* ===== LANDING PAGE (no wallet) ===== */
+          <div className="landing">
+            {/* Hero */}
+            <div className="landing-hero">
               <img src="/logo.svg" alt="ShadowBet" className="hero-logo" />
-              <h3>Private Prediction Markets</h3>
-              <p>Your bets. Your secret. On Monad.</p>
+              <h1 className="landing-title">Private Prediction Markets</h1>
+              <p className="landing-subtitle">Your bets. Your secret. On Monad.</p>
               <button className="connect-btn large" onClick={connectWallet}>
                 {isMetaMaskInstalled ? "Connect Wallet" : "Install MetaMask"}
               </button>
-              <p className="hint">
-                Bet on outcomes without revealing your position on-chain
-              </p>
+            </div>
+
+            {/* Live Markets (read-only) */}
+            {publicMarkets.length > 0 && (
+              <div className="landing-markets">
+                <h3 className="landing-section-title">Live Markets</h3>
+                <div className="market-grid">
+                  {publicMarkets.map((m) => (
+                    <MarketCard
+                      key={m.id}
+                      market={m}
+                      selected={false}
+                      onClick={connectWallet}
+                    />
+                  ))}
+                </div>
+                <p className="landing-hint">Connect wallet to place a private bet</p>
+              </div>
+            )}
+
+            {/* Features */}
+            <div className="landing-features">
+              <div className="feature-card">
+                <div className="feature-icon privacy-icon">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                  </svg>
+                </div>
+                <h4>Privacy First</h4>
+                <p>Bet via anonymous burner addresses. Your position stays hidden.</p>
+              </div>
+              <div className="feature-card">
+                <div className="feature-icon speed-icon">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+                  </svg>
+                </div>
+                <h4>Monad Speed</h4>
+                <p>400ms blocks. Near-instant bet confirmations.</p>
+              </div>
+              <div className="feature-card">
+                <div className="feature-icon simple-icon">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/>
+                    <path d="m9 12 2 2 4-4"/>
+                  </svg>
+                </div>
+                <h4>Simple</h4>
+                <p>Shield, bet, claim. Three steps to private prediction.</p>
+              </div>
             </div>
           </div>
         ) : wrongNetwork ? (
