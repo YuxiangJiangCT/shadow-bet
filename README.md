@@ -66,7 +66,7 @@ You (Public Wallet)
 |-------|------------|
 | Chain | [Monad Testnet](https://docs.monad.xyz) (400ms blocks, 800ms finality) |
 | Privacy | [Unlink SDK](https://docs.unlink.xyz) (ZK-proof privacy pool + burner accounts) |
-| Contract | Solidity 0.8.24 (Parimutuel prediction market) |
+| Contract | Solidity 0.8.24 — standard EVM, no Monad-specific precompiles needed |
 | Frontend | React 19 + TypeScript + Vite |
 | Wallet | MetaMask + Unlink Private Account |
 
