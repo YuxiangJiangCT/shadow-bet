@@ -176,20 +176,24 @@ export function BetWidget({ provider, account, initialMarket, requestedView, onV
     if (burners.length === 0 || markets.length === 0) { setMyBets([]); return; }
     try {
       const contract = new ethers.Contract(CONTRACT_ADDRESS, SHADOWBET_ABI, provider);
-      const results = await Promise.all(
-        burners.flatMap((b) =>
-          markets.map(async (m) => {
+      const found: MyBet[] = [];
+      // Sequential with small delay to avoid rate limit
+      for (const b of burners) {
+        for (const m of markets) {
+          for (let attempt = 0; attempt < 2; attempt++) {
             try {
               const bet = await contract.getBet(m.id, b.address);
               if (bet.amount > 0n) {
-                return { marketId: m.id, burnerAddr: b.address, amount: bet.amount, option: Number(bet.option), claimed: bet.claimed } as MyBet;
+                found.push({ marketId: m.id, burnerAddr: b.address, amount: bet.amount, option: Number(bet.option), claimed: bet.claimed });
               }
-            } catch { /* no bet */ }
-            return null;
-          })
-        )
-      );
-      setMyBets(results.filter((r): r is MyBet => r !== null));
+              break;
+            } catch {
+              if (attempt === 0) await new Promise(r => setTimeout(r, 500));
+            }
+          }
+        }
+      }
+      setMyBets(found);
     } catch { /* ignore */ }
   }, [burners, markets, provider]);
 
@@ -335,6 +339,17 @@ export function BetWidget({ provider, account, initialMarket, requestedView, onV
 
       setLastTxHash(txHash);
       showStatus(`Bet placed privately!`, 0);
+
+      // Optimistic update — show the bet immediately without waiting for RPC
+      const betBurnerAddr = burners.find(b => b.index === burnerIndex)?.address ?? "unknown";
+      setMyBets(prev => [...prev, {
+        marketId: selectedMarket,
+        burnerAddr: betBurnerAddr,
+        amount,
+        option: selectedOption,
+        claimed: false,
+      }]);
+
       setBetAmount("");
       setSelectedOption(null);
       // Delay before reload — RPC rate limit cooldown after fund+send
