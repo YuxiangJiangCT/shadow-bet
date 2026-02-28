@@ -146,6 +146,7 @@ contract ShadowBet {
 
         uint256 totalPool = m.yesPool + m.noPool;
         uint256 winningPool = m.winningOption == 0 ? m.yesPool : m.noPool;
+        if (winningPool == 0) revert NothingToClaim();
         uint256 payout = (b.amount * totalPool) / winningPool;
 
         (bool ok, ) = msg.sender.call{value: payout}("");
