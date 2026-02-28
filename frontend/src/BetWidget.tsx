@@ -1,8 +1,8 @@
-import { useState, useEffect, useCallback } from "react";
+import { Fragment, useState, useEffect, useCallback } from "react";
 import { ethers } from "ethers";
 import { useUnlink, useBurner } from "@unlink-xyz/react";
 import { SHADOWBET_ABI, CONTRACT_ADDRESS, MON_TOKEN, MONAD_TESTNET, ERROR_MESSAGES } from "./contract";
-import { MarketCard } from "./MarketCard";
+import { MarketCard, formatTimeLeft } from "./MarketCard";
 
 interface Market {
   id: number;
@@ -429,6 +429,24 @@ export function BetWidget({ provider, account, initialMarket, requestedView, onV
     }
   };
 
+  // --- Stepper helper ---
+  function getStepperState(m: Market, active: boolean) {
+    const steps = [
+      { label: "Shield", icon: "\ud83d\udee1\ufe0f" },
+      { label: "Bet",    icon: "\ud83c\udfb2" },
+      { label: "Settle", icon: "\u2696\ufe0f" },
+      { label: "Claim",  icon: "\ud83d\udcb0" },
+      { label: "Re-shield", icon: "\ud83d\udd12" },
+    ];
+    const activeIdx = active ? 1 : !m.resolved ? 2 : 3;
+    return steps.map((s, i) => ({
+      ...s,
+      state: i < activeIdx ? "completed" as const
+           : i === activeIdx ? "active" as const
+           : "pending" as const,
+    }));
+  }
+
   // --- Derived values ---
   const market = selectedMarket !== null ? markets[selectedMarket] : null;
   const totalPool = market ? market.yesPool + market.noPool : 0n;
@@ -590,10 +608,23 @@ export function BetWidget({ provider, account, initialMarket, requestedView, onV
                   </span>
                   <span className="market-time">
                     {isActive
-                      ? `Ends: ${new Date(market.endTime * 1000).toLocaleString()}`
+                      ? `Ends in ${formatTimeLeft(market.endTime)}`
                       : market.resolved ? "Settled" : "Betting closed"}
                   </span>
                 </div>
+              </div>
+
+              {/* Privacy Lifecycle Stepper */}
+              <div className="privacy-stepper">
+                {getStepperState(market, isActive).map((step, i) => (
+                  <Fragment key={step.label}>
+                    {i > 0 && <div className={`stepper-line ${step.state !== "pending" ? "filled" : ""}`} />}
+                    <div className={`stepper-step ${step.state}`}>
+                      <span className="stepper-icon">{step.icon}</span>
+                      <span className="stepper-label">{step.label}</span>
+                    </div>
+                  </Fragment>
+                ))}
               </div>
 
               {/* Odds Bar */}

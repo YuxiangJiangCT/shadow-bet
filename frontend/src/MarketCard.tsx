@@ -25,6 +25,19 @@ function fmtPool(wei: bigint): string {
   return n.toFixed(2);
 }
 
+/** Format seconds-until-end into a human-readable relative string */
+export function formatTimeLeft(endTime: number): string {
+  const now = Math.floor(Date.now() / 1000);
+  const diff = endTime - now;
+  if (diff <= 0) return "Ended";
+  if (diff < 3600) return `${Math.floor(diff / 60)}m`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)}h`;
+  const days = Math.floor(diff / 86400);
+  const hours = Math.floor((diff % 86400) / 3600);
+  if (days < 7) return `${days}d ${hours}h`;
+  return `${days}d`;
+}
+
 /** Auto-match a market question to a relevant emoji */
 function getMarketEmoji(question: string): string {
   const q = question.toLowerCase();
@@ -51,6 +64,27 @@ function getMarketEmoji(question: string): string {
   return "\ud83d\udd2e"; // default: crystal ball for predictions
 }
 
+/** Auto-match a market question to a category tag */
+function getMarketTag(question: string): string | null {
+  const q = question.toLowerCase();
+  const map: [string[], string][] = [
+    [["btc", "bitcoin"], "BITCOIN"],
+    [["eth", "ethereum"], "ETHEREUM"],
+    [["mon", "monad"], "MONAD"],
+    [["sol", "solana"], "SOLANA"],
+    [["price", "hit", "$", "above", "below", "ath"], "PRICE"],
+    [["election", "vote", "president", "governor"], "POLITICS"],
+    [["ai", "gpt", "llm", "claude", "openai"], "AI"],
+    [["nft"], "NFT"],
+    [["launch", "ship", "release", "mainnet"], "LAUNCH"],
+    [["win", "champion", "game", "match", "finals"], "SPORTS"],
+  ];
+  for (const [keywords, tag] of map) {
+    if (keywords.some(k => q.includes(k))) return tag;
+  }
+  return null;
+}
+
 export function MarketCard({ market, selected, onClick, betCount }: MarketCardProps) {
   const totalPool = market.yesPool + market.noPool;
   const yesPercent = totalPool > 0n
@@ -66,15 +100,29 @@ export function MarketCard({ market, selected, onClick, betCount }: MarketCardPr
     ? "Active"
     : "Ended";
 
+  const tag = getMarketTag(market.question);
+
   return (
     <div
       className={`market-card ${selected ? "selected" : ""}`}
       onClick={onClick}
     >
       <div className="card-top">
-        <span className="card-emoji">{getMarketEmoji(market.question)}</span>
-        <span className={`card-status ${statusClass}`}>{statusText}</span>
-        <span className="card-id">#{market.id}</span>
+        <div className="card-top-left">
+          <span className="card-emoji">{getMarketEmoji(market.question)}</span>
+          <span className={`card-status ${statusClass}`}>{statusText}</span>
+          {tag && <span className="card-tag">{tag}</span>}
+        </div>
+        <div className="card-top-right">
+          {isActive && (
+            <span className={`card-countdown ${
+              (market.endTime - Date.now() / 1000) < 86400 ? "urgent" : ""
+            }`}>
+              {formatTimeLeft(market.endTime)} left
+            </span>
+          )}
+          <span className="card-id">#{market.id}</span>
+        </div>
       </div>
       <p className="card-question">{market.question}</p>
       <div className="card-odds">

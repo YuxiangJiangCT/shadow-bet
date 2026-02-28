@@ -97,7 +97,8 @@ body::before {
   letter-spacing: 1px;
 }
 
-.nav-buttons { display: flex; align-items: center; gap: 10px; }
+.nav-links { display: flex; align-items: center; gap: 4px; }
+.nav-wallet { display: flex; align-items: center; gap: 8px; }
 
 .nav-link {
   background: none;
@@ -466,12 +467,27 @@ body::before {
 .card-top {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 6px;
   margin-bottom: 8px;
 }
 
-.card-top .card-id {
-  margin-left: auto;
+.card-top-left { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.card-top-right { display: flex; align-items: center; gap: 6px; }
+
+.card-tag {
+  font-size: 9px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.5px; padding: 2px 6px; border-radius: 4px;
+  background: rgba(124, 58, 237, 0.15); color: #a78bfa;
+}
+
+.card-countdown {
+  font-size: 10px; font-weight: 600; color: rgba(255,255,255,0.5); white-space: nowrap;
+}
+
+.card-countdown.urgent {
+  color: #f87171; background: rgba(239, 68, 68, 0.1);
+  padding: 2px 6px; border-radius: 4px;
 }
 
 .card-status {
@@ -606,10 +622,10 @@ body::before {
 }
 
 .market-question p {
-  font-size: 16px;
-  font-weight: 500;
-  line-height: 1.5;
-  margin-bottom: 10px;
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1.3;
+  margin-bottom: 12px;
 }
 
 .market-meta {
@@ -2301,6 +2317,38 @@ body::before {
 }
 
 /* ===== RESPONSIVE ===== */
+/* ===== Privacy Lifecycle Stepper ===== */
+.privacy-stepper {
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 16px; padding: 16px 12px;
+  background: rgba(255,255,255,0.02); border-radius: 12px;
+}
+.stepper-step {
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+}
+.stepper-icon {
+  width: 36px; height: 36px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center; font-size: 16px;
+  background: rgba(255,255,255,0.05); border: 2px solid rgba(255,255,255,0.1);
+}
+.stepper-label {
+  font-size: 10px; font-weight: 600; color: rgba(255,255,255,0.3);
+  text-transform: uppercase; letter-spacing: 0.3px;
+}
+.stepper-line {
+  flex: 1; height: 2px; min-width: 20px;
+  background: rgba(255,255,255,0.08); margin: 0 4px; margin-bottom: 18px;
+}
+.stepper-line.filled { background: linear-gradient(90deg, #4ade80, #22c55e); }
+.stepper-step.completed .stepper-icon { background: rgba(34,197,94,0.15); border-color: #4ade80; }
+.stepper-step.completed .stepper-label { color: #4ade80; }
+.stepper-step.active .stepper-icon {
+  background: rgba(124,58,237,0.2); border-color: #7c3aed;
+  box-shadow: 0 0 12px rgba(124,58,237,0.3);
+}
+.stepper-step.active .stepper-label { color: #a78bfa; font-weight: 700; }
+.stepper-step.pending .stepper-icon { opacity: 0.4; }
+
 @media (max-width: 480px) {
   .nav-bar { padding: 12px 16px; }
   .nav-logo .chain-badge,
@@ -2314,7 +2362,8 @@ body::before {
   .amount-input { font-size: 22px; }
   .option-btn { padding: 12px; font-size: 14px; }
   .shield-row { flex-wrap: wrap; }
-  .nav-link { font-size: 11px; padding: 4px 8px; }
+  .nav-links { gap: 2px; }
+  .nav-link { font-size: 11px; padding: 4px 6px; }
   .md-question { font-size: 20px; }
   .md-pools { grid-template-columns: 1fr; }
   .md-countdown-value { font-size: 18px; }
@@ -2324,4 +2373,7 @@ body::before {
   .bar-btn { font-size: 10px; padding: 3px 8px; }
   .widget-top { border-radius: 8px; }
   .view-card { padding: 16px; border-radius: 14px; max-width: 100%; }
+  .stepper-icon { width: 28px; height: 28px; font-size: 12px; }
+  .stepper-label { font-size: 8px; }
+  .market-question p { font-size: 18px; }
 }

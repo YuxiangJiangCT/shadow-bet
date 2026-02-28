@@ -217,7 +217,14 @@ function App() {
           <span className="chain-badge">MONAD</span>
           <span className="privacy-badge">UNLINK</span>
         </div>
-        <div className="nav-buttons">
+        {/* Center: Navigation */}
+        <div className="nav-links">
+          <button
+            className={`nav-link ${page === "app" ? "active" : ""}`}
+            onClick={() => { setWidgetView("browse"); navigateTo("app"); }}
+          >
+            Markets
+          </button>
           <button
             className={`nav-link ${page === "how" ? "active" : ""}`}
             onClick={() => navigateTo("how")}
@@ -235,7 +242,7 @@ function App() {
               className="nav-link"
               onClick={() => { setWidgetView("admin"); navigateTo("app"); }}
             >
-              Create Market
+              Create
             </button>
           )}
           {account && (
@@ -246,6 +253,10 @@ function App() {
               Wallet
             </button>
           )}
+        </div>
+
+        {/* Right: Wallet Status */}
+        <div className="nav-wallet">
           {!account ? (
             <button className="connect-btn" onClick={connectWallet}>
               {isMetaMaskInstalled ? "Connect Wallet" : "Install MetaMask"}
