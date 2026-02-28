@@ -92,11 +92,11 @@ export function BetWidget({ provider, account }: BetWidgetProps) {
         });
       }
       setMarkets(loaded);
-      if (loaded.length > 0 && selectedMarket === null) setSelectedMarket(0);
+      setSelectedMarket((prev) => (prev === null && loaded.length > 0) ? 0 : prev);
     } catch (err) {
       console.error("Failed to load markets:", err);
     }
-  }, [provider, selectedMarket]);
+  }, [provider]);
 
   // --- Init effects ---
   useEffect(() => { loadMarkets(); }, [loadMarkets]);
