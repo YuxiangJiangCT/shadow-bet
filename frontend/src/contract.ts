@@ -28,9 +28,39 @@ export const SHADOWBET_ABI = [
   "function resolve(uint256 marketId, uint8 winner)",
   "function claim(uint256 marketId)",
 
+  // Errors
+  "error MarketNotFound()",
+  "error MarketEnded()",
+  "error MarketNotEnded()",
+  "error MarketNotResolved()",
+  "error MarketAlreadyResolved()",
+  "error AlreadyBet()",
+  "error InvalidOption()",
+  "error InvalidAmount()",
+  "error NothingToClaim()",
+  "error AlreadyClaimed()",
+  "error NotAdmin()",
+  "error TransferFailed()",
+
   // Events
   "event MarketCreated(uint256 indexed id, string question, uint256 endTime)",
   "event BetPlaced(uint256 indexed id, address indexed user, uint256 amount)",
   "event MarketResolved(uint256 indexed id, uint8 winningOption)",
   "event Claimed(uint256 indexed id, address indexed user, uint256 amount)",
 ];
+
+/** Map custom error names to user-friendly messages */
+export const ERROR_MESSAGES: Record<string, string> = {
+  AlreadyBet: "You already placed a bet on this market",
+  MarketNotFound: "Market does not exist",
+  MarketEnded: "Betting period has ended",
+  MarketNotEnded: "Market hasn't ended yet",
+  MarketNotResolved: "Market hasn't been resolved yet",
+  MarketAlreadyResolved: "Market is already resolved",
+  InvalidOption: "Invalid option — choose YES or NO",
+  InvalidAmount: "Bet amount must be greater than 0",
+  NothingToClaim: "Nothing to claim — you didn't win",
+  AlreadyClaimed: "Winnings already claimed",
+  NotAdmin: "Only admin can do this",
+  TransferFailed: "Transfer failed",
+};

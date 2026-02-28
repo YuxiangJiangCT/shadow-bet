@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { ethers } from "ethers";
 import { useUnlink, useBurner } from "@unlink-xyz/react";
-import { SHADOWBET_ABI, CONTRACT_ADDRESS, MON_TOKEN } from "./contract";
+import { SHADOWBET_ABI, CONTRACT_ADDRESS, MON_TOKEN, MONAD_TESTNET, ERROR_MESSAGES } from "./contract";
 
 interface Market {
   id: number;
@@ -18,8 +18,32 @@ interface BetWidgetProps {
   account: string;
 }
 
-const BURNER_INDEX = 0;
 const iface = new ethers.Interface(SHADOWBET_ABI);
+
+/** Parse contract revert errors into friendly messages */
+function parseContractError(err: any): string {
+  // Try to decode custom error from data field
+  const data = err?.data || err?.error?.data;
+  if (data && typeof data === "string" && data.startsWith("0x")) {
+    try {
+      const decoded = iface.parseError(data);
+      if (decoded) {
+        return ERROR_MESSAGES[decoded.name] || decoded.name;
+      }
+    } catch { /* not a known error */ }
+  }
+  // Check error message for known patterns
+  const msg = err?.message || "";
+  for (const [key, friendly] of Object.entries(ERROR_MESSAGES)) {
+    if (msg.includes(key)) return friendly;
+  }
+  if (err?.code === "ACTION_REJECTED") return "Transaction cancelled";
+  return msg.length > 120 ? msg.slice(0, 120) + "..." : msg;
+}
+
+function explorerTxUrl(txHash: string): string {
+  return `${MONAD_TESTNET.blockExplorer}/tx/${txHash}`;
+}
 
 /** Format wei to readable string with max 4 decimal places */
 function fmtBal(wei: bigint, decimals = 18): string {
@@ -52,11 +76,15 @@ export function BetWidget({ provider, account }: BetWidgetProps) {
   const [publicBalance, setPublicBalance] = useState<bigint>(0n);
   const [burnerBalance, setBurnerBalance] = useState<bigint>(0n);
   const [shieldAmount, setShieldAmount] = useState("");
+  const [unshieldAmount, setUnshieldAmount] = useState("");
   const [mnemonic, setMnemonic] = useState<string | null>(null);
   const [setupStep, setSetupStep] = useState<"loading" | "create" | "ready">("loading");
+  const [burnerIndex, setBurnerIndex] = useState(0);
+  const [lastTxHash, setLastTxHash] = useState<string | null>(null);
 
   const privateBalance = balances[MON_TOKEN] ?? balances[MON_TOKEN.toLowerCase()] ?? 0n;
-  const burnerAddr = burners.length > 0 ? burners[0].address : null;
+  const activeBurner = burners.find(b => b.index === burnerIndex);
+  const burnerAddr = activeBurner?.address ?? (burners.length > 0 ? burners[0].address : null);
 
   // --- Status helper ---
   const showStatus = useCallback((msg: string, duration = 5000) => {
@@ -132,7 +160,7 @@ export function BetWidget({ provider, account }: BetWidgetProps) {
       }
       // Create burner if not exists
       if (burners.length === 0) {
-        await createBurner(BURNER_INDEX);
+        await createBurner(burnerIndex);
       }
       showStatus("Private wallet ready!");
     } catch (err: any) {
@@ -164,11 +192,7 @@ export function BetWidget({ provider, account }: BetWidgetProps) {
       setShieldAmount("");
       await loadPublicBalance();
     } catch (err: any) {
-      if (err.code === "ACTION_REJECTED") {
-        showStatus("Transaction cancelled");
-      } else {
-        showStatus(`Shield error: ${err.message}`);
-      }
+      showStatus(`Shield error: ${parseContractError(err)}`);
     } finally {
       setLoading(false);
     }
@@ -178,22 +202,22 @@ export function BetWidget({ provider, account }: BetWidgetProps) {
   const handlePlaceBet = async () => {
     if (selectedMarket === null || selectedOption === null || !betAmount) return;
     setLoading(true);
+    setLastTxHash(null);
     showStatus("Preparing private bet...", 0);
 
     try {
       const amount = ethers.parseEther(betAmount);
-      const gasReserve = ethers.parseEther("0.01"); // reserve for gas
+      const gasReserve = ethers.parseEther("0.01");
 
       // Ensure burner exists
-      let currentBurner = burners[0];
-      if (!currentBurner) {
-        currentBurner = await createBurner(BURNER_INDEX);
+      if (!burners.find(b => b.index === burnerIndex)) {
+        await createBurner(burnerIndex);
       }
 
       // Fund burner from privacy pool
       showStatus("Funding burner from privacy pool...", 0);
       await fund.execute({
-        index: BURNER_INDEX,
+        index: burnerIndex,
         params: { token: MON_TOKEN, amount: amount + gasReserve },
       });
 
@@ -203,17 +227,45 @@ export function BetWidget({ provider, account }: BetWidgetProps) {
       // Send bet from burner (anonymous!)
       showStatus("Placing bet from anonymous address...", 0);
       const { txHash } = await burnerSend.execute({
-        index: BURNER_INDEX,
+        index: burnerIndex,
         tx: { to: CONTRACT_ADDRESS, data: calldata, value: amount },
       });
 
-      showStatus(`Bet placed privately! TX: ${txHash.slice(0, 10)}...`);
+      setLastTxHash(txHash);
+      showStatus(`Bet placed privately!`, 0);
       setBetAmount("");
       setSelectedOption(null);
       await loadMarkets();
+
+      // Auto-sweep leftover to privacy pool
+      try {
+        const currentBurnerAddr = burners.find(b => b.index === burnerIndex)?.address;
+        if (currentBurnerAddr) {
+          const leftover = await getBalance(currentBurnerAddr);
+          const sweepMin = ethers.parseEther("0.003");
+          if (leftover > sweepMin) {
+            showStatus("Sweeping leftover to privacy pool...", 0);
+            await sweepToPool.execute({
+              index: burnerIndex,
+              params: { token: MON_TOKEN, amount: leftover - ethers.parseEther("0.001") },
+            });
+          }
+        }
+      } catch { /* sweep is best-effort */ }
+
       await loadBurnerBalance();
+      showStatus("Bet placed privately!", 8000);
     } catch (err: any) {
-      showStatus(`Bet error: ${err.message}`);
+      const friendly = parseContractError(err);
+      // Auto-rotate burner on AlreadyBet
+      if (friendly.includes("already placed")) {
+        const newIndex = burnerIndex + 1;
+        setBurnerIndex(newIndex);
+        await createBurner(newIndex);
+        showStatus(`${friendly}. Switched to new burner — try again!`);
+      } else {
+        showStatus(`Bet error: ${friendly}`);
+      }
     } finally {
       setLoading(false);
     }
@@ -222,6 +274,7 @@ export function BetWidget({ provider, account }: BetWidgetProps) {
   // --- Claim via burner + sweep back ---
   const handleClaim = async (marketId: number) => {
     setLoading(true);
+    setLastTxHash(null);
     showStatus("Claiming winnings...", 0);
 
     try {
@@ -230,34 +283,36 @@ export function BetWidget({ provider, account }: BetWidgetProps) {
       if (burnerBal < ethers.parseEther("0.005")) {
         showStatus("Funding burner for gas...", 0);
         await fund.execute({
-          index: BURNER_INDEX,
+          index: burnerIndex,
           params: { token: MON_TOKEN, amount: ethers.parseEther("0.01") },
         });
       }
 
       const calldata = iface.encodeFunctionData("claim", [marketId]);
       showStatus("Claiming from burner...", 0);
-      await burnerSend.execute({
-        index: BURNER_INDEX,
+      const { txHash } = await burnerSend.execute({
+        index: burnerIndex,
         tx: { to: CONTRACT_ADDRESS, data: calldata },
       });
+
+      setLastTxHash(txHash);
 
       // Sweep winnings back to privacy pool
       showStatus("Sweeping winnings to privacy pool...", 0);
       const newBal = burnerAddr ? await getBalance(burnerAddr) : 0n;
-      const sweepAmount = newBal - ethers.parseEther("0.002"); // keep tiny reserve
+      const sweepAmount = newBal - ethers.parseEther("0.002");
       if (sweepAmount > 0n) {
         await sweepToPool.execute({
-          index: BURNER_INDEX,
+          index: burnerIndex,
           params: { token: MON_TOKEN, amount: sweepAmount },
         });
       }
 
-      showStatus("Winnings claimed and re-shielded!");
+      showStatus("Winnings claimed and re-shielded!", 8000);
       await loadMarkets();
       await loadBurnerBalance();
     } catch (err: any) {
-      showStatus(`Claim error: ${err.message}`);
+      showStatus(`Claim error: ${parseContractError(err)}`);
     } finally {
       setLoading(false);
     }
@@ -269,11 +324,15 @@ export function BetWidget({ provider, account }: BetWidgetProps) {
     setLoading(true);
     showStatus("Withdrawing to public wallet...", 0);
     try {
-      await withdraw([{ token: MON_TOKEN, amount: privateBalance, recipient: account }]);
+      const amount = unshieldAmount && parseFloat(unshieldAmount) > 0
+        ? ethers.parseEther(unshieldAmount)
+        : privateBalance;
+      await withdraw([{ token: MON_TOKEN, amount, recipient: account }]);
       showStatus("MON withdrawn to your public wallet!");
+      setUnshieldAmount("");
       await loadPublicBalance();
     } catch (err: any) {
-      showStatus(`Withdraw error: ${err.message}`);
+      showStatus(`Withdraw error: ${parseContractError(err)}`);
     } finally {
       setLoading(false);
     }
@@ -360,7 +419,7 @@ export function BetWidget({ provider, account }: BetWidgetProps) {
         )}
       </div>
 
-      {/* Shield / Unshield */}
+      {/* Shield */}
       <div className="shield-section">
         <div className="shield-row">
           <input
@@ -368,18 +427,28 @@ export function BetWidget({ provider, account }: BetWidgetProps) {
             className="shield-input"
             value={shieldAmount}
             onChange={(e) => setShieldAmount(e.target.value)}
-            placeholder="0.0"
+            placeholder="Amount to shield"
             disabled={isLoading}
           />
           <button className="shield-btn" onClick={handleShield} disabled={isLoading || !shieldAmount}>
             Shield
           </button>
-          {privateBalance > 0n && (
-            <button className="unshield-btn" onClick={handleUnshield} disabled={isLoading}>
-              Unshield
-            </button>
-          )}
         </div>
+        {privateBalance > 0n && (
+          <div className="shield-row" style={{ marginTop: 8 }}>
+            <input
+              type="text"
+              className="shield-input"
+              value={unshieldAmount}
+              onChange={(e) => setUnshieldAmount(e.target.value)}
+              placeholder={`Max: ${fmtBal(privateBalance)}`}
+              disabled={isLoading}
+            />
+            <button className="unshield-btn" onClick={handleUnshield} disabled={isLoading}>
+              {unshieldAmount ? "Unshield" : "Unshield All"}
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Market Selector */}
@@ -420,7 +489,7 @@ export function BetWidget({ provider, account }: BetWidgetProps) {
           <div className="odds-section">
             <div className="odds-labels">
               <span className="yes-label">YES {yesPercent.toFixed(1)}%</span>
-              <span className="pool-total">{ethers.formatEther(totalPool)} MON</span>
+              <span className="pool-total">{fmtBal(totalPool)} MON</span>
               <span className="no-label">NO {noPercent.toFixed(1)}%</span>
             </div>
             <div className="odds-bar">
@@ -507,7 +576,21 @@ export function BetWidget({ provider, account }: BetWidgetProps) {
       )}
 
       {/* Transaction Status */}
-      {txStatus && <div className="tx-status">{txStatus}</div>}
+      {txStatus && (
+        <div className="tx-status">
+          {txStatus}
+          {lastTxHash && (
+            <a
+              href={explorerTxUrl(lastTxHash)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="tx-link"
+            >
+              View on Explorer
+            </a>
+          )}
+        </div>
+      )}
     </div>
   );
 }

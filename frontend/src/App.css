@@ -686,6 +686,17 @@ body::before {
   color: #f87171;
 }
 
+.tx-link {
+  display: inline-block;
+  margin-left: 10px;
+  color: #a78bfa;
+  text-decoration: underline;
+  font-weight: 500;
+}
+.tx-link:hover {
+  color: #c4b5fd;
+}
+
 /* ===== FOOTER ===== */
 .app-footer {
   text-align: center;
