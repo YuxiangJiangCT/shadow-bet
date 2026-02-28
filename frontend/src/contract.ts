@@ -9,7 +9,7 @@ export const MONAD_TESTNET = {
   currency: { name: "MON", symbol: "MON", decimals: 18 },
 };
 
-export const CONTRACT_ADDRESS = "0x0000000000000000000000000000000000000000";
+export const CONTRACT_ADDRESS = "0x1187167eFA940EA400A8C2c7D91573A2Ec93145A";
 
 export const SHADOWBET_ABI = [
   // Read functions
