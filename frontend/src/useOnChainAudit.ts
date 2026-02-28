@@ -14,6 +14,7 @@ export interface AuditData {
   events: AuditEvent[];
   totalBets: number;
   totalVolume: bigint;
+  betsByMarket: Record<number, number>;
   loading: boolean;
   error: string | null;
 }
@@ -28,6 +29,7 @@ export function useOnChainAudit(): AuditData {
   const [events, setEvents] = useState<AuditEvent[]>([]);
   const [totalBets, setTotalBets] = useState(0);
   const [totalVolume, setTotalVolume] = useState<bigint>(0n);
+  const [betsByMarket, setBetsByMarket] = useState<Record<number, number>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -89,9 +91,16 @@ export function useOnChainAudit(): AuditData {
 
         const volume = unique.reduce((sum, ev) => sum + ev.amount, 0n);
 
+        // Count bets per market
+        const perMarket: Record<number, number> = {};
+        unique.forEach(ev => {
+          perMarket[ev.marketId] = (perMarket[ev.marketId] || 0) + 1;
+        });
+
         setEvents(unique.slice(0, 20));
         setTotalBets(unique.length);
         setTotalVolume(volume);
+        setBetsByMarket(perMarket);
         setError(null);
       } catch (err: any) {
         if (!cancelled) {
@@ -110,5 +119,5 @@ export function useOnChainAudit(): AuditData {
     };
   }, []);
 
-  return { events, totalBets, totalVolume, loading, error };
+  return { events, totalBets, totalVolume, betsByMarket, loading, error };
 }

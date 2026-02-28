@@ -20,6 +20,7 @@ interface BetWidgetProps {
   initialMarket?: number | null;
   requestedView?: string | null;
   onViewChanged?: () => void;
+  betsByMarket?: Record<number, number>;
 }
 
 interface MyBet {
@@ -65,7 +66,7 @@ function fmtBal(wei: bigint, decimals = 18): string {
   return `${int}.${dec.slice(0, 4)}`;
 }
 
-export function BetWidget({ provider, account, initialMarket, requestedView, onViewChanged }: BetWidgetProps) {
+export function BetWidget({ provider, account, initialMarket, requestedView, onViewChanged, betsByMarket }: BetWidgetProps) {
   // --- Market state ---
   const [markets, setMarkets] = useState<Market[]>([]);
   const [selectedMarket, setSelectedMarket] = useState<number | null>(initialMarket ?? null);
@@ -498,6 +499,7 @@ export function BetWidget({ provider, account, initialMarket, requestedView, onV
                     setSelectedMarket(m.id);
                     setViewStep("bet");
                   }}
+                  betCount={betsByMarket?.[m.id]}
                 />
               ))}
             </div>

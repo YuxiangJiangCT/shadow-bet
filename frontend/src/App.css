@@ -465,9 +465,13 @@ body::before {
 
 .card-top {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  gap: 6px;
   margin-bottom: 8px;
+}
+
+.card-top .card-id {
+  margin-left: auto;
 }
 
 .card-status {
@@ -553,9 +557,11 @@ body::before {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 8px;
   font-size: 11px;
   padding-top: 8px;
   border-top: 1px solid rgba(255,255,255,0.05);
+  flex-wrap: wrap;
 }
 
 .card-pool-label {
@@ -566,6 +572,22 @@ body::before {
   color: rgba(255,255,255,0.8);
   font-weight: 600;
   font-family: 'Inter', monospace;
+}
+
+.card-emoji {
+  font-size: 1.3rem;
+  line-height: 1;
+}
+
+.card-bets-badge {
+  font-size: 10px;
+  font-weight: 600;
+  color: #a78bfa;
+  background: rgba(167, 139, 250, 0.1);
+  border: 1px solid rgba(167, 139, 250, 0.15);
+  padding: 2px 8px;
+  border-radius: 12px;
+  white-space: nowrap;
 }
 
 .no-markets {

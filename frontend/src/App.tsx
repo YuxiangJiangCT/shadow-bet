@@ -34,7 +34,7 @@ function App() {
   const [chainId, setChainId] = useState<number | null>(null);
   const [wrongNetwork, setWrongNetwork] = useState(false);
   const [publicMarkets, setPublicMarkets] = useState<MarketData[]>([]);
-  const { totalBets } = useOnChainAudit();
+  const { totalBets, betsByMarket } = useOnChainAudit();
 
   const parseHash = (h: string): { page: "app" | "how" | "privacy" | "market"; marketId: number | null } => {
     const marketMatch = h.match(/^#\/market\/(\d+)$/);
@@ -309,6 +309,7 @@ function App() {
                       market={m}
                       selected={false}
                       onClick={() => navigateTo("market", m.id)}
+                      betCount={betsByMarket[m.id]}
                     />
                   ))}
                 </div>
@@ -361,7 +362,7 @@ function App() {
             </div>
           </div>
         ) : (
-          <BetWidget provider={provider!} account={account} initialMarket={initialMarket} requestedView={widgetView} onViewChanged={() => setWidgetView(null)} />
+          <BetWidget provider={provider!} account={account} initialMarket={initialMarket} requestedView={widgetView} onViewChanged={() => setWidgetView(null)} betsByMarket={betsByMarket} />
         )}
       </main>
 
