@@ -233,18 +233,6 @@ function App() {
           >
             Markets
           </button>
-          <button
-            className={`nav-link ${page === "how" ? "active" : ""}`}
-            onClick={() => navigateTo("how")}
-          >
-            How It Works
-          </button>
-          <button
-            className={`nav-link ${page === "privacy" ? "active" : ""}`}
-            onClick={() => navigateTo("privacy")}
-          >
-            Privacy Proof
-          </button>
           {account && isAdmin && (
             <button
               className="nav-link"
@@ -261,6 +249,18 @@ function App() {
               Wallet
             </button>
           )}
+          <button
+            className={`nav-link ${page === "how" ? "active" : ""}`}
+            onClick={() => navigateTo("how")}
+          >
+            How It Works
+          </button>
+          <button
+            className={`nav-link ${page === "privacy" ? "active" : ""}`}
+            onClick={() => navigateTo("privacy")}
+          >
+            Privacy Proof
+          </button>
         </div>
 
         {/* Right: Wallet Status */}
