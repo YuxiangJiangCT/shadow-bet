@@ -950,6 +950,232 @@ body::before {
   color: #c4b5fd;
 }
 
+/* ===== PRIVACY PROOF ===== */
+.privacy-proof {
+  max-width: 800px;
+  width: 100%;
+  animation: fadeSlideUp 0.4s ease-out;
+}
+
+.pp-header {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.pp-header h2 {
+  font-size: 28px;
+  font-weight: 700;
+  margin-bottom: 8px;
+  background: linear-gradient(135deg, #a855f7, #6366f1);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.pp-subtitle {
+  color: rgba(255,255,255,0.5);
+  font-size: 15px;
+}
+
+.pp-comparison {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.pp-side {
+  background: rgba(22, 18, 32, 0.95);
+  border-radius: 18px;
+  padding: 20px;
+  border: 1px solid rgba(255,255,255,0.06);
+}
+
+.pp-normal {
+  border-color: rgba(239, 68, 68, 0.2);
+}
+
+.pp-shadow {
+  border-color: rgba(34, 197, 94, 0.2);
+}
+
+.pp-side-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.pp-side-header h3 {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.pp-side-header.danger h3 { color: #f87171; }
+.pp-side-header.safe h3 { color: #4ade80; }
+.pp-side-icon { font-size: 18px; }
+
+.pp-flow {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+.pp-node {
+  width: 100%;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 10px;
+  padding: 10px 12px;
+  text-align: center;
+}
+
+.pp-node-label {
+  display: block;
+  font-size: 11px;
+  color: rgba(255,255,255,0.5);
+  margin-bottom: 4px;
+  font-weight: 500;
+}
+
+.pp-addr {
+  font-size: 12px;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  color: rgba(255,255,255,0.6);
+}
+
+.pp-node.privacy-pool {
+  background: rgba(34, 197, 94, 0.06);
+  border-color: rgba(34, 197, 94, 0.15);
+}
+
+.pp-node.burner {
+  background: rgba(124, 58, 237, 0.06);
+  border-color: rgba(124, 58, 237, 0.15);
+}
+
+.pp-arrow {
+  color: rgba(255,255,255,0.2);
+  font-size: 14px;
+  line-height: 1;
+}
+
+.danger-text { color: #f87171; }
+.safe-text { color: #4ade80; }
+
+.pp-exposed {
+  padding-top: 12px;
+  border-top: 1px solid rgba(255,255,255,0.06);
+}
+
+.pp-exposed h4 {
+  font-size: 12px;
+  font-weight: 700;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.pp-exposed ul {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.pp-exposed li {
+  font-size: 12px;
+  color: rgba(255,255,255,0.6);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.pp-x {
+  color: #f87171;
+  font-weight: 700;
+  font-size: 13px;
+  flex-shrink: 0;
+}
+
+.pp-check {
+  color: #4ade80;
+  font-weight: 700;
+  font-size: 13px;
+  flex-shrink: 0;
+}
+
+.pp-highlight {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-weight: 600;
+}
+
+.danger-bg {
+  background: rgba(239, 68, 68, 0.15);
+  color: #f87171;
+}
+
+.safe-bg {
+  background: rgba(34, 197, 94, 0.12);
+  color: #4ade80;
+}
+
+/* Insight box */
+.pp-insight {
+  background: rgba(22, 18, 32, 0.95);
+  border: 1px solid rgba(124, 58, 237, 0.2);
+  border-radius: 14px;
+  padding: 16px 20px;
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  margin-bottom: 20px;
+}
+
+.pp-insight-icon {
+  font-size: 20px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.pp-insight-text {
+  font-size: 13px;
+  color: rgba(255,255,255,0.7);
+  line-height: 1.6;
+}
+
+.pp-insight-text code {
+  background: rgba(255,255,255,0.06);
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-size: 11px;
+  color: #a78bfa;
+}
+
+.pp-insight-text strong {
+  color: white;
+}
+
+.pp-cta {
+  display: block;
+  width: 100%;
+  text-align: center;
+}
+
+@media (max-width: 640px) {
+  .pp-comparison { grid-template-columns: 1fr; }
+  .pp-header h2 { font-size: 22px; }
+}
+
 /* ===== HOW IT WORKS ===== */
 .how-it-works {
   max-width: 720px;

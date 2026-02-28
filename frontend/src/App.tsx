@@ -3,6 +3,7 @@ import { ethers } from "ethers";
 import { BetWidget } from "./BetWidget";
 import { HowItWorks } from "./HowItWorks";
 import { MarketCard } from "./MarketCard";
+import { PrivacyProof } from "./PrivacyProof";
 import { MONAD_TESTNET, CONTRACT_ADDRESS, SHADOWBET_ABI } from "./contract";
 import "./App.css";
 
@@ -233,7 +234,7 @@ function App() {
         {page === "how" ? (
           <HowItWorks onStart={() => navigateTo("app")} />
         ) : page === "privacy" ? (
-          <div /> /* PrivacyProof placeholder — Block 5 */
+          <PrivacyProof account={account} burnerAddr={null} onStart={() => navigateTo("app")} />
         ) : !account ? (
           /* ===== LANDING PAGE (no wallet) ===== */
           <div className="landing">
