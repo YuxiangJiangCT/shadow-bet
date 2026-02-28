@@ -60,6 +60,12 @@ You (Public Wallet)
 - A bet was placed (from an unlinkable address)
 - The total pool sizes
 
+## Who Benefits
+
+- **Bettors** — No more copycat trading or social pressure. Your conviction stays private, your edge stays yours.
+- **Market Creators** — Privacy attracts larger, more honest bets. Whales participate when their positions aren't exposed.
+- **Unlink & Monad Ecosystem** — First privacy-native DeFi application, proving that ZK privacy primitives have real product-market fit beyond simple transfers.
+
 ## Tech Stack
 
 | Layer | Technology |
