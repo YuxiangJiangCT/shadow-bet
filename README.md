@@ -1,5 +1,7 @@
 # ShadowBet
 
+![CI](https://github.com/YuxiangJiangCT/shadow-bet/actions/workflows/ci.yml/badge.svg)
+
 **Private prediction markets on Monad, powered by Unlink.**
 
 > Your bets. Your secret. On-chain.
@@ -168,6 +170,34 @@ make build      # production build
 ```
 
 See [`.env.example`](.env.example) for required environment variables.
+
+## Project Structure
+
+```
+shadow-bet/
+├── contracts/
+│   ├── src/ShadowBet.sol      # Core prediction market contract
+│   ├── test/ShadowBet.t.sol   # 12 Foundry tests
+│   └── foundry.toml
+├── frontend/
+│   ├── src/
+│   │   ├── App.tsx            # Main app + routing + landing page
+│   │   ├── BetWidget.tsx      # Full betting UI with Unlink integration
+│   │   ├── MarketCard.tsx     # Market card component (grid layout)
+│   │   ├── HowItWorks.tsx     # Privacy flow visualization
+│   │   ├── PrivacyProof.tsx   # Visual diff: normal vs private betting
+│   │   ├── contract.ts       # ABI, addresses, error mappings
+│   │   └── App.css            # Dark theme, responsive design
+│   └── public/logo.svg
+├── scripts/create-markets.ts  # Demo market deployment script
+├── Makefile                   # Build/test/deploy automation
+├── .github/workflows/ci.yml  # CI: forge test + npm build
+└── .env.example
+```
+
+## Screenshots
+
+<!-- Add screenshots here -->
 
 ## Hackathon
 

@@ -61,6 +61,7 @@ contract ShadowBet {
     /// @notice Create a new prediction market.
     /// @param question The question to predict on.
     /// @param endTime Unix timestamp when betting closes.
+    /// @return id The newly created market ID.
     function createMarket(string calldata question, uint256 endTime) external onlyAdmin returns (uint256) {
         uint256 id = marketCount++;
         markets[id] = Market({
@@ -131,7 +132,8 @@ contract ShadowBet {
     //                        Claim Winnings
     // ================================================================
 
-    /// @notice Claim winnings from a resolved market.
+    /// @notice Claim winnings from a resolved market. Payout is proportional
+    ///         to bet size relative to the winning pool: (bet * totalPool) / winningPool.
     /// @param marketId The market to claim from.
     function claim(uint256 marketId) external {
         Market memory m = markets[marketId];
@@ -159,14 +161,25 @@ contract ShadowBet {
     //                           Getters
     // ================================================================
 
+    /// @notice Get full market data.
+    /// @param id The market ID.
+    /// @return Market struct with question, endTime, pools, resolved status.
     function getMarket(uint256 id) external view returns (Market memory) {
         return markets[id];
     }
 
+    /// @notice Get a user's bet on a specific market.
+    /// @param marketId The market ID.
+    /// @param user The bettor's address.
+    /// @return Bet struct with amount, option, and claimed status.
     function getBet(uint256 marketId, address user) external view returns (Bet memory) {
         return bets[marketId][user];
     }
 
+    /// @notice Get current pool sizes for odds calculation.
+    /// @param marketId The market ID.
+    /// @return yesPool Total MON bet on YES.
+    /// @return noPool Total MON bet on NO.
     function getOdds(uint256 marketId) external view returns (uint256 yesPool, uint256 noPool) {
         Market memory m = markets[marketId];
         return (m.yesPool, m.noPool);
