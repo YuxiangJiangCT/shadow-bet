@@ -203,7 +203,7 @@ shadow-bet/
 
 Built at [Unlink x Monad Hackathon](https://dorahacks.io) (Feb 27 – Mar 1, 2026, NYC).
 
-**Tracks:** DeFi, Best Use of Unlink SDK
+**Track:** DeFi
 
 ---
 
