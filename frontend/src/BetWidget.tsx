@@ -94,6 +94,12 @@ export function BetWidget({ provider, account, initialMarket }: BetWidgetProps) 
 
   const privateBalance = balances[MON_TOKEN] ?? balances[MON_TOKEN.toLowerCase()] ?? 0n;
   const activeBurner = burners.find(b => b.index === burnerIndex);
+
+  // --- Admin state ---
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [adminOpen, setAdminOpen] = useState(false);
+  const [newQuestion, setNewQuestion] = useState("");
+  const [newDuration, setNewDuration] = useState(259200); // 3 days default
   const burnerAddr = activeBurner?.address ?? (burners.length > 0 ? burners[0].address : null);
 
   // --- Status helper ---
@@ -167,6 +173,39 @@ export function BetWidget({ provider, account, initialMarket }: BetWidgetProps) 
       setMyBets(results.filter((r): r is MyBet => r !== null));
     } catch { /* ignore */ }
   }, [burners, markets, provider]);
+
+  // --- Check admin ---
+  useEffect(() => {
+    async function checkAdmin() {
+      try {
+        const contract = new ethers.Contract(CONTRACT_ADDRESS, SHADOWBET_ABI, provider);
+        const adminAddr = await contract.admin();
+        setIsAdmin(adminAddr.toLowerCase() === account.toLowerCase());
+      } catch { setIsAdmin(false); }
+    }
+    checkAdmin();
+  }, [provider, account]);
+
+  // --- Create market (admin) ---
+  const handleCreateMarket = async () => {
+    if (!newQuestion.trim()) return;
+    setLoading(true);
+    showStatus("Creating market...", 0);
+    try {
+      const signer = await provider.getSigner();
+      const contract = new ethers.Contract(CONTRACT_ADDRESS, SHADOWBET_ABI, signer);
+      const endTime = Math.floor(Date.now() / 1000) + newDuration;
+      const tx = await contract.createMarket(newQuestion.trim(), endTime);
+      await tx.wait();
+      showStatus("Market created!");
+      setNewQuestion("");
+      await loadMarkets();
+    } catch (err: any) {
+      showStatus(`Create error: ${parseContractError(err)}`);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // --- Init effects ---
   useEffect(() => { loadMarkets(); }, [loadMarkets]);
@@ -493,6 +532,53 @@ export function BetWidget({ provider, account, initialMarket }: BetWidgetProps) 
           </div>
         )}
       </div>
+
+      {/* Admin: Create Market */}
+      {isAdmin && (
+        <div className="admin-panel">
+          <div className="admin-panel-header" onClick={() => setAdminOpen(!adminOpen)}>
+            <span>Admin: Create Market</span>
+            <span>{adminOpen ? "\u25B2" : "\u25BC"}</span>
+          </div>
+          {adminOpen && (
+            <div className="admin-panel-body">
+              <input
+                type="text"
+                className="shield-input"
+                value={newQuestion}
+                onChange={(e) => setNewQuestion(e.target.value)}
+                placeholder="Market question, e.g. Will MON hit $10?"
+                disabled={isLoading}
+              />
+              <div className="admin-duration-btns">
+                {[
+                  { label: "1 Day", val: 86400 },
+                  { label: "3 Days", val: 259200 },
+                  { label: "7 Days", val: 604800 },
+                ].map((d) => (
+                  <button
+                    key={d.val}
+                    className={`quick-btn ${newDuration === d.val ? "selected" : ""}`}
+                    onClick={() => setNewDuration(d.val)}
+                  >
+                    {d.label}
+                  </button>
+                ))}
+              </div>
+              <div className="admin-end-preview">
+                Ends: {new Date(Date.now() + newDuration * 1000).toLocaleString()}
+              </div>
+              <button
+                className="connect-btn"
+                onClick={handleCreateMarket}
+                disabled={isLoading || !newQuestion.trim()}
+              >
+                {isLoading ? <><span className="spinner" />Creating...</> : "Create Market"}
+              </button>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Market Grid */}
       {markets.length > 0 ? (
