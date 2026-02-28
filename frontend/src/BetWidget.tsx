@@ -17,7 +17,7 @@ interface BetWidgetProps {
   account: string;
 }
 
-export function BetWidget({ provider, account }: BetWidgetProps) {
+export function BetWidget({ provider, account: _account }: BetWidgetProps) {
   const [markets, setMarkets] = useState<Market[]>([]);
   const [selectedMarket, setSelectedMarket] = useState<number | null>(null);
   const [betAmount, setBetAmount] = useState("");
