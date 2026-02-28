@@ -75,23 +75,30 @@ function App() {
     return () => window.removeEventListener("hashchange", onHash);
   }, []);
 
-  // Load markets from public RPC (no wallet required)
+  // Load markets from public RPC (rate-limit resilient)
   const loadPublicMarkets = useCallback(async () => {
     try {
       const contract = new ethers.Contract(CONTRACT_ADDRESS, SHADOWBET_ABI, publicProvider);
       const count = await contract.marketCount();
       const loaded: MarketData[] = [];
       for (let i = 0; i < Number(count); i++) {
-        const m = await contract.getMarket(i);
-        loaded.push({
-          id: i,
-          question: m.question,
-          endTime: Number(m.endTime),
-          yesPool: m.yesPool,
-          noPool: m.noPool,
-          resolved: m.resolved,
-          winningOption: Number(m.winningOption),
-        });
+        for (let attempt = 0; attempt < 3; attempt++) {
+          try {
+            const m = await contract.getMarket(i);
+            loaded.push({
+              id: i,
+              question: m.question,
+              endTime: Number(m.endTime),
+              yesPool: m.yesPool,
+              noPool: m.noPool,
+              resolved: m.resolved,
+              winningOption: Number(m.winningOption),
+            });
+            break;
+          } catch {
+            if (attempt < 2) await new Promise(r => setTimeout(r, 1000 * (attempt + 1)));
+          }
+        }
       }
       setPublicMarkets(loaded);
     } catch (err) {

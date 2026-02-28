@@ -130,23 +130,30 @@ export function BetWidget({ provider, account, initialMarket, requestedView, onV
     } catch { /* ignore */ }
   }, [burnerAddr, getBalance]);
 
-  // --- Load markets ---
+  // --- Load markets (rate-limit resilient) ---
   const loadMarkets = useCallback(async () => {
     try {
       const contract = new ethers.Contract(CONTRACT_ADDRESS, SHADOWBET_ABI, provider);
       const count = await contract.marketCount();
       const loaded: Market[] = [];
       for (let i = 0; i < Number(count); i++) {
-        const m = await contract.getMarket(i);
-        loaded.push({
-          id: i,
-          question: m.question,
-          endTime: Number(m.endTime),
-          yesPool: m.yesPool,
-          noPool: m.noPool,
-          resolved: m.resolved,
-          winningOption: Number(m.winningOption),
-        });
+        for (let attempt = 0; attempt < 3; attempt++) {
+          try {
+            const m = await contract.getMarket(i);
+            loaded.push({
+              id: i,
+              question: m.question,
+              endTime: Number(m.endTime),
+              yesPool: m.yesPool,
+              noPool: m.noPool,
+              resolved: m.resolved,
+              winningOption: Number(m.winningOption),
+            });
+            break;
+          } catch {
+            if (attempt < 2) await new Promise(r => setTimeout(r, 1000 * (attempt + 1)));
+          }
+        }
       }
       setMarkets(loaded);
     } catch (err) {
