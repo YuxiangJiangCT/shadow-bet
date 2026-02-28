@@ -181,7 +181,12 @@ export function BetWidget({ provider, account, initialMarket }: BetWidgetProps) 
         const contract = new ethers.Contract(CONTRACT_ADDRESS, SHADOWBET_ABI, provider);
         const adminAddr = await contract.admin();
         setIsAdmin(adminAddr.toLowerCase() === account.toLowerCase());
-      } catch { setIsAdmin(false); }
+      } catch {
+        // Fallback: if RPC fails (429 rate limit), check known admin address
+        // Contract still enforces onlyAdmin on-chain, this only controls UI visibility
+        const KNOWN_ADMIN = "0x9b50ED6a40e98215b2d2da5CE2E948c28AB7eCF5";
+        setIsAdmin(account.toLowerCase() === KNOWN_ADMIN.toLowerCase());
+      }
     }
     checkAdmin();
   }, [provider, account]);
@@ -552,6 +557,7 @@ export function BetWidget({ provider, account, initialMarket }: BetWidgetProps) 
               />
               <div className="admin-duration-btns">
                 {[
+                  { label: "10m Demo", val: 600 },
                   { label: "1 Day", val: 86400 },
                   { label: "3 Days", val: 259200 },
                   { label: "7 Days", val: 604800 },
