@@ -4,6 +4,8 @@
 
 > Your bets. Your secret. On-chain.
 
+**[Live Demo](https://shadow-bet.vercel.app)** | [Smart Contract](https://testnet.monadexplorer.com/address/0x1187167eFA940EA400A8C2c7D91573A2Ec93145A)
+
 ## The Problem
 
 Every prediction market today is **fully transparent**. The moment you place a bet, everyone can see:
