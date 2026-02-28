@@ -390,21 +390,9 @@ export function BetWidget({ provider, account, initialMarket, requestedView, onV
       await new Promise(r => setTimeout(r, 2000));
       await loadMarkets();
 
-      // Auto-sweep leftover to privacy pool
-      try {
-        const currentBurnerAddr = burners.find(b => b.index === burnerIndex)?.address;
-        if (currentBurnerAddr) {
-          const leftover = await getBalance(currentBurnerAddr);
-          const sweepMin = ethers.parseEther("0.003");
-          if (leftover > sweepMin) {
-            showStatus("Sweeping leftover to privacy pool...", 0);
-            await sweepToPool.execute({
-              index: burnerIndex,
-              params: { token: MON_TOKEN, amount: leftover - ethers.parseEther("0.001") },
-            });
-          }
-        }
-      } catch { /* sweep is best-effort */ }
+      // NOTE: sweepToPool disabled — Unlink SDK reverts on Monad testnet.
+      // Leftover gas stays in burner (reused on next bet).
+      clearError(); // dismiss any lingering SDK errors
 
       await loadBurnerBalance();
       await loadMyBets();
