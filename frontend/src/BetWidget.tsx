@@ -91,14 +91,13 @@ export function BetWidget({ provider, account, initialMarket }: BetWidgetProps) 
   const [setupStep, setSetupStep] = useState<"loading" | "create" | "ready">("loading");
   const [burnerIndex, setBurnerIndex] = useState(0);
   const [lastTxHash, setLastTxHash] = useState<string | null>(null);
-  const [viewStep, setViewStep] = useState<"browse" | "bet" | "wallet">("browse");
+  const [viewStep, setViewStep] = useState<"browse" | "bet" | "wallet" | "admin">("browse");
 
   const privateBalance = balances[MON_TOKEN] ?? balances[MON_TOKEN.toLowerCase()] ?? 0n;
   const activeBurner = burners.find(b => b.index === burnerIndex);
 
   // --- Admin state ---
   const [isAdmin, setIsAdmin] = useState(false);
-  const [adminOpen, setAdminOpen] = useState(false);
   const [newQuestion, setNewQuestion] = useState("");
   const [newEndTime, setNewEndTime] = useState(() => {
     const d = new Date(Date.now() + 259200 * 1000); // default 3 days
@@ -499,6 +498,14 @@ export function BetWidget({ provider, account, initialMarket }: BetWidgetProps) 
         <span className="balance-bar-sep">|</span>
         <span className="balance-bar-private">&#x1F512; {fmtBal(privateBalance)} MON</span>
         <div className="balance-bar-actions">
+          {isAdmin && (
+            <button
+              className={`bar-btn ${viewStep === "admin" ? "active" : ""}`}
+              onClick={() => setViewStep("admin")}
+            >
+              Admin
+            </button>
+          )}
           <button
             className={`bar-btn ${viewStep === "wallet" ? "active" : ""}`}
             onClick={() => setViewStep("wallet")}
@@ -519,64 +526,6 @@ export function BetWidget({ provider, account, initialMarket }: BetWidgetProps) 
       {/* ===== VIEW: Browse Markets ===== */}
       {viewStep === "browse" && (
         <div className="view-content">
-          {/* Admin: Create Market */}
-          {isAdmin && (
-            <div className="admin-panel">
-              <div className="admin-panel-header" onClick={() => setAdminOpen(!adminOpen)}>
-                <span>Admin: Create Market</span>
-                <span>{adminOpen ? "\u25B2" : "\u25BC"}</span>
-              </div>
-              {adminOpen && (
-                <div className="admin-panel-body">
-                  <input
-                    type="text"
-                    className="shield-input"
-                    value={newQuestion}
-                    onChange={(e) => setNewQuestion(e.target.value)}
-                    placeholder="Market question, e.g. Will MON hit $10?"
-                    disabled={isLoading}
-                  />
-                  <div className="admin-duration-btns">
-                    {[
-                      { label: "10m Demo", val: 600 },
-                      { label: "1 Day", val: 86400 },
-                      { label: "3 Days", val: 259200 },
-                      { label: "7 Days", val: 604800 },
-                    ].map((d) => (
-                      <button
-                        key={d.val}
-                        className="quick-btn"
-                        onClick={() => {
-                          const dt = new Date(Date.now() + d.val * 1000);
-                          setNewEndTime(dt.toISOString().slice(0, 16));
-                        }}
-                      >
-                        {d.label}
-                      </button>
-                    ))}
-                  </div>
-                  <input
-                    type="datetime-local"
-                    className="shield-input"
-                    value={newEndTime}
-                    onChange={(e) => setNewEndTime(e.target.value)}
-                    disabled={isLoading}
-                  />
-                  <div className="admin-end-preview">
-                    Ends: {new Date(newEndTime).toLocaleString()}
-                  </div>
-                  <button
-                    className="connect-btn"
-                    onClick={handleCreateMarket}
-                    disabled={isLoading || !newQuestion.trim()}
-                  >
-                    {isLoading ? <><span className="spinner" />Creating...</> : "Create Market"}
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
-
           {/* Market Grid */}
           {markets.length > 0 ? (
             <div className="market-grid">
@@ -595,6 +544,63 @@ export function BetWidget({ provider, account, initialMarket }: BetWidgetProps) 
           ) : (
             <div className="no-markets">No markets yet</div>
           )}
+        </div>
+      )}
+
+      {/* ===== VIEW: Admin ===== */}
+      {viewStep === "admin" && (
+        <div className="view-content">
+          <button className="step-back" onClick={() => setViewStep("browse")}>
+            &#8592; Back
+          </button>
+          <div className="admin-panel" style={{ border: "none", background: "none" }}>
+            <div className="admin-panel-body" style={{ padding: 0 }}>
+              <input
+                type="text"
+                className="shield-input"
+                value={newQuestion}
+                onChange={(e) => setNewQuestion(e.target.value)}
+                placeholder="Market question, e.g. Will MON hit $10?"
+                disabled={isLoading}
+              />
+              <div className="admin-duration-btns">
+                {[
+                  { label: "10m Demo", val: 600 },
+                  { label: "1 Day", val: 86400 },
+                  { label: "3 Days", val: 259200 },
+                  { label: "7 Days", val: 604800 },
+                ].map((d) => (
+                  <button
+                    key={d.val}
+                    className="quick-btn"
+                    onClick={() => {
+                      const dt = new Date(Date.now() + d.val * 1000);
+                      setNewEndTime(dt.toISOString().slice(0, 16));
+                    }}
+                  >
+                    {d.label}
+                  </button>
+                ))}
+              </div>
+              <input
+                type="datetime-local"
+                className="shield-input"
+                value={newEndTime}
+                onChange={(e) => setNewEndTime(e.target.value)}
+                disabled={isLoading}
+              />
+              <div className="admin-end-preview">
+                Ends: {new Date(newEndTime).toLocaleString()}
+              </div>
+              <button
+                className="connect-btn"
+                onClick={handleCreateMarket}
+                disabled={isLoading || !newQuestion.trim()}
+              >
+                {isLoading ? <><span className="spinner" />Creating...</> : "Create Market"}
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
