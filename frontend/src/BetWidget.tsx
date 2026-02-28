@@ -1,7 +1,7 @@
 import { Fragment, useState, useEffect, useCallback } from "react";
 import { ethers } from "ethers";
 import { useUnlink, useBurner } from "@unlink-xyz/react";
-import { SHADOWBET_ABI, CONTRACT_ADDRESS, MON_TOKEN, MONAD_TESTNET, ERROR_MESSAGES } from "./contract";
+import { SHADOWBET_ABI, CONTRACT_ADDRESS, MON_TOKEN, MONAD_TESTNET, ERROR_MESSAGES, KNOWN_ADMIN } from "./contract";
 import { MarketCard, formatTimeLeft } from "./MarketCard";
 
 interface Market {
@@ -106,6 +106,7 @@ export function BetWidget({ provider, account, initialMarket, requestedView, onV
     return d.toISOString().slice(0, 16);
   });
   const burnerAddr = activeBurner?.address ?? (burners.length > 0 ? burners[0].address : null);
+  const isAdmin = account.toLowerCase() === KNOWN_ADMIN.toLowerCase();
 
   // --- Status helper ---
   const showStatus = useCallback((msg: string, duration = 5000) => {
@@ -213,6 +214,24 @@ export function BetWidget({ provider, account, initialMarket, requestedView, onV
       await loadMarkets();
     } catch (err: any) {
       showStatus(`Create error: ${parseContractError(err)}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // --- Resolve market (admin) ---
+  const handleResolve = async (marketId: number, winningOption: number) => {
+    setLoading(true);
+    showStatus(`Resolving market #${marketId}...`, 0);
+    try {
+      const signer = await provider.getSigner();
+      const contract = new ethers.Contract(CONTRACT_ADDRESS, SHADOWBET_ABI, signer);
+      const tx = await contract.resolve(marketId, winningOption);
+      await tx.wait();
+      showStatus("Market resolved!");
+      await loadMarkets();
+    } catch (err: any) {
+      showStatus(`Resolve error: ${parseContractError(err)}`);
     } finally {
       setLoading(false);
     }
@@ -599,9 +618,9 @@ export function BetWidget({ provider, account, initialMarket, requestedView, onV
               />
               <div className="admin-duration-btns">
                 {[
-                  { label: "10m Demo", val: 600 },
+                  { label: "2 Min", val: 120 },
+                  { label: "10 Min", val: 600 },
                   { label: "1 Day", val: 86400 },
-                  { label: "3 Days", val: 259200 },
                   { label: "7 Days", val: 604800 },
                 ].map((d) => (
                   <button
@@ -752,6 +771,29 @@ export function BetWidget({ provider, account, initialMarket, requestedView, onV
                       {isLoading ? <><span className="spinner" />Processing...</> : selectedOption === null ? "Select YES or NO" : "Place Private Bet"}
                     </button>
                   )}
+                </div>
+              )}
+
+              {/* Admin Resolve — ended but not yet resolved */}
+              {isAdmin && !isActive && !market.resolved && (
+                <div className="resolve-section">
+                  <p className="resolve-label">Admin: Resolve this market</p>
+                  <div className="option-buttons">
+                    <button
+                      className="option-btn yes"
+                      onClick={() => handleResolve(market.id, 0)}
+                      disabled={isLoading}
+                    >
+                      {isLoading ? "..." : "YES Wins"}
+                    </button>
+                    <button
+                      className="option-btn no"
+                      onClick={() => handleResolve(market.id, 1)}
+                      disabled={isLoading}
+                    >
+                      {isLoading ? "..." : "NO Wins"}
+                    </button>
+                  </div>
                 </div>
               )}
 

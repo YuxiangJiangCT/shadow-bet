@@ -863,6 +863,8 @@ body::before {
   cursor: not-allowed;
 }
 
+.resolve-section { margin-top: 20px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.08); }
+.resolve-label { font-size: 0.8rem; color: #f59e0b; margin-bottom: 10px; text-align: center; }
 .claim-section { margin-top: 16px; }
 
 .claim-btn {
