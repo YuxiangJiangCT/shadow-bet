@@ -61,7 +61,7 @@ function getMarketEmoji(question: string): string {
   for (const [keywords, emoji] of map) {
     if (keywords.some(k => q.includes(k))) return emoji;
   }
-  return "\ud83d\udd2e"; // default: crystal ball for predictions
+  return "\ud83c\udfaf"; // default: target for predictions
 }
 
 /** Auto-match a market question to a category tag */
