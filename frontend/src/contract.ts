@@ -4,7 +4,15 @@ export const MONAD_TESTNET = {
   chainId: 10143,
   chainIdHex: "0x279F",
   name: "Monad Testnet",
+  // Primary RPC for wallet connection (MetaMask uses this)
   rpcUrl: "https://testnet-rpc.monad.xyz",
+  // Fallback RPCs for read-only queries — tried in order when primary is rate-limited
+  publicRpcUrls: [
+    "https://rpc.ankr.com/monad_testnet",
+    "https://monad-testnet.drpc.org",
+    "https://rpc-testnet.monadinfra.com",
+    "https://testnet-rpc.monad.xyz",
+  ],
   blockExplorer: "https://testnet.monadexplorer.com",
   currency: { name: "MON", symbol: "MON", decimals: 18 },
 };

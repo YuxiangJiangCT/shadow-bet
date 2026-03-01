@@ -80,8 +80,17 @@ function explorerTxUrl(txHash: string): string {
   return `${MONAD_TESTNET.blockExplorer}/tx/${txHash}`;
 }
 
-// Dedicated public RPC for read-only market queries — avoids competing with MetaMask wallet RPC
-const widgetPublicProvider = new ethers.JsonRpcProvider(MONAD_TESTNET.rpcUrl);
+// FallbackProvider for read-only market queries — avoids competing with MetaMask wallet RPC
+// Tries multiple public RPCs in priority order, auto-failovers on 429
+const widgetPublicProvider = new ethers.FallbackProvider(
+  MONAD_TESTNET.publicRpcUrls.map((url, i) => ({
+    provider: new ethers.JsonRpcProvider(url),
+    priority: i + 1,
+    stallTimeout: 2000,
+    weight: 1,
+  })),
+  1
+);
 
 /** Format wei to readable string with max 4 decimal places */
 function fmtBal(wei: bigint, decimals = 18): string {

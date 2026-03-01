@@ -25,8 +25,16 @@ interface MarketData {
   winningOption: number;
 }
 
-// Public RPC provider for read-only access (no wallet needed)
-const publicProvider = new ethers.JsonRpcProvider(MONAD_TESTNET.rpcUrl);
+// FallbackProvider: tries multiple public RPCs in order, auto-failovers on 429
+const publicProvider = new ethers.FallbackProvider(
+  MONAD_TESTNET.publicRpcUrls.map((url, i) => ({
+    provider: new ethers.JsonRpcProvider(url),
+    priority: i + 1,   // lower = higher priority
+    stallTimeout: 2000,
+    weight: 1,
+  })),
+  1 // quorum=1: first successful response wins
+);
 
 /** Sort markets: Active (by pool size desc) → Ended (by endTime asc) → Resolved (by id desc) */
 function sortMarkets(markets: MarketData[]): MarketData[] {
