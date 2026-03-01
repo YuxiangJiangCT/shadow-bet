@@ -625,46 +625,46 @@ export function BetWidget({ provider, account, initialMarket, requestedView, bet
     }
   };
 
-  // --- Re-shield: burner → deposit → privacy pool (privacy-preserving) ---
-  const handleReshield = async () => {
+  // --- Withdraw burner funds back to public wallet ---
+  // On Monad testnet, burner → pool deposit reverts (pool contract limitation).
+  // So we transfer directly from burner to public wallet.
+  // Privacy note: this creates a one-hop on-chain link, but the bet itself
+  // was still placed privately (public wallet never touched the betting contract).
+  const handleWithdrawBurner = async () => {
     if (!burnerAddr) return;
     setLoading(true);
-    showStatus("Re-shielding burner funds to privacy pool...", 0);
+    showStatus("Withdrawing burner funds to your wallet...", 0);
     try {
       // Fetch fresh on-chain balance (state may be stale)
       const currentBal = await getBalance(burnerAddr);
       if (currentBal <= 0n) {
-        showStatus("Burner has no funds to re-shield.", 5000);
+        showStatus("Burner has no funds to withdraw.", 5000);
         setLoading(false);
         return;
       }
 
-      // Keep gas reserve so burner can still send the deposit tx
-      const gasReserve = ethers.parseEther("0.01");
-      const sweepAmount = currentBal > gasReserve ? currentBal - gasReserve : 0n;
-      if (sweepAmount <= 0n) {
-        showStatus("Burner balance too low to re-shield (need gas reserve).", 5000);
+      // Keep gas reserve for the transfer tx itself
+      const gasReserve = ethers.parseEther("0.005");
+      const withdrawAmount = currentBal > gasReserve ? currentBal - gasReserve : 0n;
+      if (withdrawAmount <= 0n) {
+        showStatus("Burner balance too low to withdraw (need gas for tx).", 5000);
         setLoading(false);
         return;
       }
 
-      // Generate deposit tx with burner as depositor
-      showStatus("Preparing deposit transaction...", 0);
-      const result = await deposit([{ token: MON_TOKEN, amount: sweepAmount, depositor: burnerAddr }]);
-
-      // Execute deposit from burner (privacy-preserving!)
-      showStatus("Depositing from burner to privacy pool...", 0);
+      showStatus(`Sending ${fmtBal(withdrawAmount)} MON to your wallet...`, 0);
       const { txHash } = await burnerSend.execute({
         index: burnerIndex,
-        tx: { to: result.to, data: result.calldata, value: result.value },
+        tx: { to: account, data: "0x", value: withdrawAmount },
       });
 
       setLastTxHash(txHash);
-      showStatus("Burner funds re-shielded! You can now unshield to your public wallet.", 8000);
+      showStatus(`Withdrawn ${fmtBal(withdrawAmount)} MON to your wallet!`, 8000);
       await loadBurnerBalance();
+      await loadPublicBalance();
       clearError();
     } catch (err: any) {
-      showStatus(`Re-shield error: ${parseContractError(err)}`);
+      showStatus(`Withdraw error: ${parseContractError(err)}`);
     } finally {
       setLoading(false);
     }
@@ -677,7 +677,7 @@ export function BetWidget({ provider, account, initialMarket, requestedView, bet
       { label: "Bet",    icon: "\ud83c\udfb2" },
       { label: "Settle", icon: "\u2696\ufe0f" },
       { label: "Claim",  icon: "\ud83d\udcb0" },
-      { label: "Re-shield", icon: "\ud83d\udd12" },
+      { label: "Withdraw", icon: "\ud83d\udd13" },
     ];
     // Resolved markets: full cycle complete (funds stay private in burner)
     if (m.resolved) return steps.map(s => ({ ...s, state: "completed" as const }));
@@ -1038,9 +1038,9 @@ export function BetWidget({ provider, account, initialMarket, requestedView, bet
                   <p className="claim-success-balance">
                     &#x1F525; Burner balance: {fmtBal(burnerBalance)} MON
                   </p>
-                  {burnerBalance > ethers.parseEther("0.01") && (
-                    <button className="reshield-btn" onClick={handleReshield} disabled={isLoading} style={{ marginTop: 8 }}>
-                      {isLoading ? <><span className="spinner" />Re-shielding...</> : "Re-shield to Privacy Pool"}
+                  {burnerBalance > ethers.parseEther("0.005") && (
+                    <button className="reshield-btn" onClick={handleWithdrawBurner} disabled={isLoading} style={{ marginTop: 8 }}>
+                      {isLoading ? <><span className="spinner" />Withdrawing...</> : "Withdraw to Wallet"}
                     </button>
                   )}
                 </div>
@@ -1075,10 +1075,10 @@ export function BetWidget({ provider, account, initialMarket, requestedView, bet
                 <span className="balance-value">{fmtBal(burnerBalance)} MON</span>
                 <button
                   className="reshield-btn"
-                  onClick={handleReshield}
+                  onClick={handleWithdrawBurner}
                   disabled={isLoading}
                 >
-                  {isLoading ? "..." : "Re-shield"}
+                  {isLoading ? "..." : "Withdraw"}
                 </button>
               </div>
             )}
