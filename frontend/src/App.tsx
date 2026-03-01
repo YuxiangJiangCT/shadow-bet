@@ -73,6 +73,7 @@ function App() {
   const [marketId, setMarketId] = useState<number | null>(initialRoute.marketId);
   const [initialMarket, setInitialMarket] = useState<number | null>(null);
   const [widgetView, setWidgetView] = useState<string | null>(null);
+  const handleViewStep = useCallback((v: string) => setWidgetView(v), []);
   const [landingFilter, setLandingFilter] = useState<"all" | "active" | "ended" | "resolved">("all");
 
   const isMetaMaskInstalled = typeof window.ethereum !== "undefined";
@@ -446,7 +447,7 @@ function App() {
             </div>
           </div>
         ) : (
-          <BetWidget provider={provider!} account={account} initialMarket={initialMarket} requestedView={widgetView} onViewChanged={() => setWidgetView(null)} betsByMarket={betsByMarket} onViewStep={(v) => setWidgetView(v)} />
+          <BetWidget provider={provider!} account={account} initialMarket={initialMarket} requestedView={widgetView} betsByMarket={betsByMarket} onViewStep={handleViewStep} />
         )}
       </main>
 

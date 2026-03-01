@@ -19,7 +19,6 @@ interface BetWidgetProps {
   account: string;
   initialMarket?: number | null;
   requestedView?: string | null;
-  onViewChanged?: () => void;
   betsByMarket?: Record<number, number>;
   onViewStep?: (view: string) => void;
 }
@@ -89,7 +88,7 @@ function fmtBal(wei: bigint, decimals = 18): string {
   return `${int}.${dec.slice(0, 4)}`;
 }
 
-export function BetWidget({ provider, account, initialMarket, requestedView, onViewChanged, betsByMarket, onViewStep }: BetWidgetProps) {
+export function BetWidget({ provider, account, initialMarket, requestedView, betsByMarket, onViewStep }: BetWidgetProps) {
   // --- Market state ---
   const [markets, setMarkets] = useState<Market[]>([]);
   const [selectedMarket, setSelectedMarket] = useState<number | null>(initialMarket ?? null);
@@ -293,7 +292,6 @@ export function BetWidget({ provider, account, initialMarket, requestedView, onV
   useEffect(() => {
     if (requestedView === "browse" || requestedView === "wallet" || requestedView === "admin") {
       setViewStep(requestedView);
-      onViewChanged?.();
     }
   }, [requestedView]);
 
