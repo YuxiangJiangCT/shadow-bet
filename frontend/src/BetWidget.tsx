@@ -1,4 +1,4 @@
-import { Fragment, useState, useEffect, useCallback } from "react";
+import { Fragment, useState, useEffect, useCallback, useRef } from "react";
 import { ethers } from "ethers";
 import { useUnlink, useBurner } from "@unlink-xyz/react";
 import { SHADOWBET_ABI, CONTRACT_ADDRESS, MON_TOKEN, MONAD_TESTNET, ERROR_MESSAGES, KNOWN_ADMIN } from "./contract";
@@ -200,14 +200,19 @@ export function BetWidget({ provider, account, initialMarket, requestedView, onV
   // --- My Bets state ---
   const [myBets, setMyBets] = useState<MyBet[]>([]);
 
+  // Ref so loadMyBets can read latest markets without being in its dep array
+  const marketsRef = useRef<Market[]>(markets);
+  useEffect(() => { marketsRef.current = markets; }, [markets]);
+
   const loadMyBets = useCallback(async () => {
-    if (burners.length === 0 || markets.length === 0) { setMyBets([]); return; }
+    const currentMarkets = marketsRef.current;
+    if (burners.length === 0 || currentMarkets.length === 0) { setMyBets([]); return; }
     try {
       const contract = new ethers.Contract(CONTRACT_ADDRESS, SHADOWBET_ABI, provider);
       const found: MyBet[] = [];
       // Sequential with small delay to avoid rate limit
       for (const b of burners) {
-        for (const m of markets) {
+        for (const m of currentMarkets) {
           for (let attempt = 0; attempt < 2; attempt++) {
             try {
               const bet = await contract.getBet(m.id, b.address);
@@ -223,7 +228,7 @@ export function BetWidget({ provider, account, initialMarket, requestedView, onV
       }
       setMyBets(found);
     } catch { /* ignore */ }
-  }, [burners, markets, provider]);
+  }, [burners, provider]); // markets accessed via ref — no dep loop
 
   // --- Create market (admin) ---
   const handleCreateMarket = async () => {
@@ -269,13 +274,15 @@ export function BetWidget({ provider, account, initialMarket, requestedView, onV
   useEffect(() => { loadPublicBalance(); }, [loadPublicBalance]);
   useEffect(() => { loadBurnerBalance(); }, [loadBurnerBalance]);
   // Load bets AFTER markets load + RPC cooldown (avoid rate limit clash)
-  // Second pass at 8s catches any races or rate-limit failures from the first pass
+  // Use markets.length (not markets) to avoid firing on every new array reference from sort
+  const marketsLen = markets.length;
+  const burnersLen = burners.length;
   useEffect(() => {
-    if (markets.length === 0 || burners.length === 0) return;
+    if (marketsLen === 0 || burnersLen === 0) return;
     const t1 = setTimeout(() => loadMyBets(), 3000);
     const t2 = setTimeout(() => loadMyBets(), 8000);
     return () => { clearTimeout(t1); clearTimeout(t2); };
-  }, [markets, burners, loadMyBets]);
+  }, [marketsLen, burnersLen]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Sync initialMarket prop
   useEffect(() => {
@@ -293,10 +300,14 @@ export function BetWidget({ provider, account, initialMarket, requestedView, onV
     }
   }, [requestedView]);
 
-  // Refresh markets when returning to browse view
+  // Refresh markets when returning to browse view (only if already loaded once — avoids double-load on mount)
+  const prevViewStep = useRef<string>("");
   useEffect(() => {
-    if (viewStep === "browse") loadMarkets();
-  }, [viewStep, loadMarkets]);
+    if (viewStep === "browse" && prevViewStep.current !== "" && prevViewStep.current !== "browse") {
+      loadMarkets();
+    }
+    prevViewStep.current = viewStep;
+  }, [viewStep]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Report viewStep changes back to App for nav highlight
   useEffect(() => {
