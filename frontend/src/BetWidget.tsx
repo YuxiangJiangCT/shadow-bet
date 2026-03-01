@@ -687,6 +687,12 @@ export function BetWidget({ provider, account, initialMarket, requestedView, bet
           <span>{fmtBal(publicBalance)} MON</span>
           <span className="balance-bar-sep">|</span>
           <span className="balance-bar-private">&#x1F512; {fmtBal(privateBalance)} MON</span>
+          {burnerAddr && (
+            <>
+              <span className="balance-bar-sep">|</span>
+              <span className="balance-bar-burner">&#x1F525; {fmtBal(burnerBalance)} MON</span>
+            </>
+          )}
         </div>
       </div>
 
@@ -953,6 +959,16 @@ export function BetWidget({ provider, account, initialMarket, requestedView, bet
                   <button className="claim-btn" onClick={() => handleClaim(market.id)} disabled={isLoading}>
                     {isLoading ? <><span className="spinner" />Claiming...</> : "Claim Winnings"}
                   </button>
+                </div>
+              )}
+
+              {/* Post-claim success: show burner balance */}
+              {market.resolved && myBets.some(b => b.marketId === market.id && b.claimed) && burnerAddr && (
+                <div className="claim-success">
+                  <p>&#x2705; Winnings claimed to burner</p>
+                  <p className="claim-success-balance">
+                    &#x1F525; Burner balance: {fmtBal(burnerBalance)} MON
+                  </p>
                 </div>
               )}
             </>

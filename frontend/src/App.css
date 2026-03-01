@@ -892,6 +892,28 @@ body::before {
   cursor: not-allowed;
 }
 
+.claim-success {
+  margin-top: 16px;
+  padding: 14px 16px;
+  background: rgba(34, 197, 94, 0.08);
+  border: 1px solid rgba(34, 197, 94, 0.2);
+  border-radius: 12px;
+  text-align: center;
+}
+
+.claim-success p {
+  margin: 0;
+  font-size: 14px;
+  color: #4ade80;
+}
+
+.claim-success-balance {
+  margin-top: 6px !important;
+  font-size: 16px !important;
+  font-weight: 600;
+  color: #ff9500 !important;
+}
+
 /* ===== TX STATUS ===== */
 .tx-status {
   margin-top: 12px;
@@ -2217,6 +2239,10 @@ body::before {
 
 .balance-bar-private {
   color: #4ade80;
+}
+
+.balance-bar-burner {
+  color: #ff9500;
 }
 
 .balance-bar-sep {
