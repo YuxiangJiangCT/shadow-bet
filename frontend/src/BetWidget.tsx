@@ -505,6 +505,7 @@ export function BetWidget({ provider, account, initialMarket, requestedView, bet
     } catch (err: any) {
       const friendly = parseContractError(err);
       if (friendly.includes("already claimed")) {
+        clearError(); // dismiss raw SDK error immediately
         setMyBets(prev => prev.map(b =>
           b.marketId === marketId && b.burnerAddr === burnerAddr
             ? { ...b, claimed: true }
@@ -877,7 +878,7 @@ export function BetWidget({ provider, account, initialMarket, requestedView, bet
               )}
 
               {/* Claim Section */}
-              {market.resolved && (
+              {market.resolved && !myBets.some(b => b.marketId === market.id && b.claimed) && (
                 <div className="claim-section">
                   <button className="claim-btn" onClick={() => handleClaim(market.id)} disabled={isLoading}>
                     {isLoading ? <><span className="spinner" />Claiming...</> : "Claim & Re-shield"}
