@@ -159,31 +159,48 @@ export function BetWidget({ provider, account, initialMarket, requestedView, bet
     } catch { /* ignore */ }
   }, [burnerAddr, getBalance]);
 
-  // --- Load markets — sequential fallback, no broadcast ---
+  // --- Load markets — one provider for all queries, fallback on rate limit ---
   const loadMarkets = useCallback(async () => {
     try {
       const count = await withFallback(p =>
         new ethers.Contract(CONTRACT_ADDRESS, SHADOWBET_ABI, p).marketCount()
       );
-      const loaded: Market[] = [];
-      for (let i = 0; i < Number(count); i++) {
-        try {
-          const m = await withFallback(p =>
-            new ethers.Contract(CONTRACT_ADDRESS, SHADOWBET_ABI, p).getMarket(i)
-          );
-          loaded.push({
-            id: i,
-            question: m.question,
-            endTime: Number(m.endTime),
-            yesPool: m.yesPool,
-            noPool: m.noPool,
-            resolved: m.resolved,
-            winningOption: Number(m.winningOption),
-          });
-        } catch {
-          // skip single market fetch failure
+      const n = Number(count);
+      if (n === 0) { setMarkets([]); return; }
+
+      // Use one provider for all getMarket calls — switch only on rate limit
+      const urls = MONAD_TESTNET.publicRpcUrls;
+      let loaded: Market[] = [];
+
+      for (const url of urls) {
+        const p = new ethers.JsonRpcProvider(url, MONAD_TESTNET.chainId, { staticNetwork: true });
+        const contract = new ethers.Contract(CONTRACT_ADDRESS, SHADOWBET_ABI, p);
+        loaded = [];
+        let rateLimited = false;
+
+        for (let i = 0; i < n; i++) {
+          try {
+            const m = await contract.getMarket(i);
+            loaded.push({
+              id: i, question: m.question, endTime: Number(m.endTime),
+              yesPool: m.yesPool, noPool: m.noPool,
+              resolved: m.resolved, winningOption: Number(m.winningOption),
+            });
+          } catch (err: any) {
+            const msg = String(err?.message ?? "");
+            const isRL = err?.error?.code === -32007 || err?.error?.code === -32090 ||
+              err?.status === 429 || msg.includes("429") || msg.includes("rate limit") ||
+              msg.includes("Too many requests") || String(err?.shortMessage ?? "").includes("missing response");
+            if (isRL) { rateLimited = true; break; }
+            // else: skip single market (contract error)
+          }
         }
+
+        if (!rateLimited && loaded.length > 0) break; // success
+        if (rateLimited) continue; // try next RPC
+        break; // no rate limit, no markets found
       }
+
       // Deduplicate by question (keep first occurrence = lower ID)
       const seen = new Set<string>();
       const unique = loaded.filter(m => {
@@ -196,7 +213,7 @@ export function BetWidget({ provider, account, initialMarket, requestedView, bet
     } catch (err) {
       console.error("Failed to load markets:", err);
     }
-  }, []); // stable — withFallback creates fresh providers per call
+  }, []); // stable — providers created per call
 
   // --- My Bets state ---
   const [myBets, setMyBets] = useState<MyBet[]>([]);
@@ -208,26 +225,49 @@ export function BetWidget({ provider, account, initialMarket, requestedView, bet
   const loadMyBets = useCallback(async () => {
     const currentMarkets = marketsRef.current;
     if (burners.length === 0 || currentMarkets.length === 0) return;
-    try {
+
+    // Use ONE provider for all queries — only switch RPC on rate limit
+    const urls = MONAD_TESTNET.publicRpcUrls;
+    for (const url of urls) {
+      const p = new ethers.JsonRpcProvider(url, MONAD_TESTNET.chainId, { staticNetwork: true });
+      const contract = new ethers.Contract(CONTRACT_ADDRESS, SHADOWBET_ABI, p);
       const found: MyBet[] = [];
       let successCount = 0;
+      let rateLimited = false;
+
       for (const b of burners) {
+        if (rateLimited) break;
         for (const m of currentMarkets) {
+          if (rateLimited) break;
           try {
-            const bet = await withFallback(p =>
-              new ethers.Contract(CONTRACT_ADDRESS, SHADOWBET_ABI, p).getBet(m.id, b.address)
-            );
+            const bet = await contract.getBet(m.id, b.address);
             successCount++;
             if (bet.amount > 0n) {
               found.push({ marketId: m.id, burnerAddr: b.address, amount: bet.amount, option: Number(bet.option), claimed: bet.claimed });
             }
-          } catch { /* skip single bet lookup failure */ }
+          } catch (err: any) {
+            const msg = String(err?.message ?? "");
+            const isRL = err?.error?.code === -32007 || err?.error?.code === -32090 ||
+              err?.status === 429 || msg.includes("429") || msg.includes("rate limit") ||
+              msg.includes("Too many requests") || String(err?.shortMessage ?? "").includes("missing response");
+            if (isRL) { rateLimited = true; } // try next RPC
+            // else: skip this bet (contract revert, etc.)
+          }
         }
       }
-      // Only replace state if at least one RPC call succeeded — preserve optimistic data otherwise
-      if (successCount > 0) setMyBets(found);
-    } catch { /* ignore */ }
-  }, [burners]); // markets via ref, RPC via withFallback — no provider dep needed
+
+      // If we got at least one successful call, use this data
+      if (successCount > 0) {
+        setMyBets(found);
+        return; // done — no need to try other RPCs
+      }
+      // If rate limited with zero success, try next RPC
+      if (rateLimited) continue;
+      // If no rate limit and no success (no markets/burners matched), that's fine
+      return;
+    }
+    // All RPCs rate-limited — preserve existing optimistic data
+  }, [burners]); // markets via ref — no provider dep needed
 
   // --- Create market (admin) ---
   const handleCreateMarket = async () => {
@@ -968,6 +1008,9 @@ export function BetWidget({ provider, account, initialMarket, requestedView, bet
               <div className="my-bets-header">
                 <h3>My Bets</h3>
                 <span className="my-bets-count">{myBets.length}</span>
+                <button className="quick-btn" onClick={loadMyBets} disabled={isLoading} style={{ marginLeft: "auto", fontSize: 11, padding: "2px 8px" }}>
+                  Refresh
+                </button>
               </div>
               {myBets.map((bet, i) => {
                 const m = markets.find((mk) => mk.id === bet.marketId);
@@ -1010,6 +1053,11 @@ export function BetWidget({ provider, account, initialMarket, requestedView, bet
               <p style={{ marginTop: 8, fontSize: 12, opacity: 0.5 }}>
                 Place your first private bet to see it here
               </p>
+              {burners.length > 0 && markets.length > 0 && (
+                <button className="quick-btn" onClick={loadMyBets} disabled={isLoading} style={{ marginTop: 8 }}>
+                  Refresh My Bets
+                </button>
+              )}
             </div>
           )}
         </div>
