@@ -5,7 +5,7 @@
 set -e
 
 RPC="https://testnet-rpc.monad.xyz"
-CONTRACT="0x1187167eFA940EA400A8C2c7D91573A2Ec93145A"
+CONTRACT="0xC52f48c48084e7511B98E117Fb643B13Ac75a77A"
 
 if [ -z "$PRIVATE_KEY" ]; then
   echo "Usage: PRIVATE_KEY=0x... bash scripts/create-markets.sh"

@@ -455,7 +455,7 @@ function App() {
       <footer className="app-footer">
         <span>Built for <a href="https://dorahacks.io" target="_blank" rel="noopener noreferrer">Unlink × Monad Hackathon</a></span>
         <span className="footer-sep">·</span>
-        <a href="https://testnet.monadexplorer.com/address/0x1187167eFA940EA400A8C2c7D91573A2Ec93145A" target="_blank" rel="noopener noreferrer">Contract</a>
+        <a href="https://testnet.monadexplorer.com/address/0xC52f48c48084e7511B98E117Fb643B13Ac75a77A" target="_blank" rel="noopener noreferrer">Contract</a>
         <span className="footer-sep">·</span>
         <a href="https://github.com/YuxiangJiangCT/shadow-bet" target="_blank" rel="noopener noreferrer">GitHub</a>
       </footer>

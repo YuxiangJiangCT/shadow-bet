@@ -23,7 +23,7 @@ const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 
 const provider = new JsonRpcProvider("https://testnet-rpc.monad.xyz");
 const wallet = new Wallet(pk, provider);
-const contract = new Contract("0x1187167eFA940EA400A8C2c7D91573A2Ec93145A", [
+const contract = new Contract("0xC52f48c48084e7511B98E117Fb643B13Ac75a77A", [
   "function placeBet(uint256 marketId, uint8 option) payable",
   "function getBet(uint256 marketId, address user) view returns (tuple(uint256 amount, uint8 option, bool claimed))",
 ], wallet);
