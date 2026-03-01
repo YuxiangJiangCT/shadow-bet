@@ -627,20 +627,29 @@ export function BetWidget({ provider, account, initialMarket, requestedView, bet
 
   // --- Re-shield: burner → deposit → privacy pool (privacy-preserving) ---
   const handleReshield = async () => {
-    if (!burnerAddr || burnerBalance <= 0n) return;
+    if (!burnerAddr) return;
     setLoading(true);
     showStatus("Re-shielding burner funds to privacy pool...", 0);
     try {
-      // Keep a small gas reserve in burner for future txs
-      const gasReserve = ethers.parseEther("0.005");
-      const sweepAmount = burnerBalance > gasReserve ? burnerBalance - gasReserve : burnerBalance;
+      // Fetch fresh on-chain balance (state may be stale)
+      const currentBal = await getBalance(burnerAddr);
+      if (currentBal <= 0n) {
+        showStatus("Burner has no funds to re-shield.", 5000);
+        setLoading(false);
+        return;
+      }
+
+      // Keep gas reserve so burner can still send the deposit tx
+      const gasReserve = ethers.parseEther("0.01");
+      const sweepAmount = currentBal > gasReserve ? currentBal - gasReserve : 0n;
       if (sweepAmount <= 0n) {
-        showStatus("Burner balance too low to re-shield.", 5000);
+        showStatus("Burner balance too low to re-shield (need gas reserve).", 5000);
         setLoading(false);
         return;
       }
 
       // Generate deposit tx with burner as depositor
+      showStatus("Preparing deposit transaction...", 0);
       const result = await deposit([{ token: MON_TOKEN, amount: sweepAmount, depositor: burnerAddr }]);
 
       // Execute deposit from burner (privacy-preserving!)
@@ -1029,7 +1038,7 @@ export function BetWidget({ provider, account, initialMarket, requestedView, bet
                   <p className="claim-success-balance">
                     &#x1F525; Burner balance: {fmtBal(burnerBalance)} MON
                   </p>
-                  {burnerBalance > ethers.parseEther("0.005") && (
+                  {burnerBalance > ethers.parseEther("0.01") && (
                     <button className="reshield-btn" onClick={handleReshield} disabled={isLoading} style={{ marginTop: 8 }}>
                       {isLoading ? <><span className="spinner" />Re-shielding...</> : "Re-shield to Privacy Pool"}
                     </button>
