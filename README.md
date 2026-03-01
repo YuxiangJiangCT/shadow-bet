@@ -95,8 +95,7 @@ sequenceDiagram
 
     B->>S: claim(marketId)
     S-->>B: Payout to burner
-    B->>UP: Sweep winnings (re-shield)
-    UP->>U: Unshield to public wallet
+    B->>U: Withdraw to wallet
 ```
 
 ## User Flow
@@ -105,8 +104,8 @@ sequenceDiagram
 2. **Create Private Wallet** — One-click Unlink account setup
 3. **Shield** — Deposit MON into the privacy pool
 4. **Bet** — Place a private bet via anonymous burner address
-5. **Claim** — Collect winnings, automatically re-shielded
-6. **Unshield** — Withdraw to your public wallet when ready
+5. **Claim** — Collect winnings to burner
+6. **Withdraw** — Transfer funds from burner back to your wallet
 
 ## Smart Contract
 
@@ -200,10 +199,6 @@ shadow-bet/
 ├── .github/workflows/ci.yml  # CI: forge test + npm build
 └── .env.example
 ```
-
-## Screenshots
-
-<!-- Add screenshots here -->
 
 ## Hackathon
 
