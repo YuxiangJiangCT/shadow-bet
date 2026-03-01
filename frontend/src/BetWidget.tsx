@@ -241,10 +241,19 @@ export function BetWidget({ provider, account, initialMarket, requestedView, bet
       const contract = new ethers.Contract(CONTRACT_ADDRESS, SHADOWBET_ABI, signer);
       const endTime = Math.floor(new Date(newEndTime).getTime() / 1000);
       const tx = await contract.createMarket(newQuestion.trim(), endTime);
-      await tx.wait();
+      const receipt = await tx.wait();
+      // Parse new market ID from MarketCreated event
+      const createdLog = receipt.logs.find((log: any) => {
+        try { return iface.parseLog(log)?.name === "MarketCreated"; } catch { return false; }
+      });
+      const newId = createdLog ? Number(iface.parseLog(createdLog)!.args[0]) : null;
       showStatus("Market created!");
       setNewQuestion("");
       await loadMarkets();
+      if (newId !== null) {
+        setSelectedMarket(newId);
+        setViewStep("bet");
+      }
     } catch (err: any) {
       showStatus(`Create error: ${parseContractError(err)}`);
     } finally {
