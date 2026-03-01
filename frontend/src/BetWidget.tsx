@@ -454,6 +454,15 @@ export function BetWidget({ provider, account, initialMarket, requestedView, bet
     try {
       const amount = ethers.parseEther(betAmount);
       const gasReserve = ethers.parseEther("0.05");
+      const totalNeeded = amount + gasReserve;
+
+      // Pre-check: enough private balance?
+      if (privateBalance < totalNeeded) {
+        const shortfall = totalNeeded - privateBalance;
+        showStatus(`Need ${fmtBal(totalNeeded)} MON in private pool (bet + gas). Shield at least ${fmtBal(shortfall)} more MON first.`, 8000);
+        setLoading(false);
+        return;
+      }
 
       // Ensure burner exists
       if (!burners.find(b => b.index === burnerIndex)) {
@@ -464,7 +473,7 @@ export function BetWidget({ provider, account, initialMarket, requestedView, bet
       showStatus("Funding burner from privacy pool...", 0);
       await fund.execute({
         index: burnerIndex,
-        params: { token: MON_TOKEN, amount: amount + gasReserve },
+        params: { token: MON_TOKEN, amount: totalNeeded },
       });
 
       // Verify burner was actually funded (SDK may fail silently)
