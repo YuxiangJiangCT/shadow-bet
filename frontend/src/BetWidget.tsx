@@ -507,7 +507,7 @@ export function BetWidget({ provider, account, initialMarket, requestedView, bet
 
       // sweepToPool disabled — reverts on Monad testnet
 
-      showStatus("Winnings claimed!", 8000);
+      showStatus("Winnings claimed to burner! Check Wallet for updated balance.", 8000);
       await loadMarkets();
       await loadBurnerBalance();
       clearError();
@@ -890,7 +890,7 @@ export function BetWidget({ provider, account, initialMarket, requestedView, bet
               {market.resolved && !myBets.some(b => b.marketId === market.id && b.claimed) && (
                 <div className="claim-section">
                   <button className="claim-btn" onClick={() => handleClaim(market.id)} disabled={isLoading}>
-                    {isLoading ? <><span className="spinner" />Claiming...</> : "Claim & Re-shield"}
+                    {isLoading ? <><span className="spinner" />Claiming...</> : "Claim Winnings"}
                   </button>
                 </div>
               )}
