@@ -2285,6 +2285,12 @@ body::before {
   color: #a78bfa;
 }
 
+/* ===== NAV FLEX RESILIENCE ===== */
+/* Prevent nav sections from overflowing each other when viewport narrows */
+.nav-logo { flex-shrink: 0; min-width: 0; }
+.nav-links { flex-shrink: 1; min-width: 0; flex-wrap: nowrap; overflow: hidden; }
+.nav-wallet { flex-shrink: 0; min-width: 0; }
+
 /* Balance-only bar (no header, no nav buttons in ready state) */
 .widget-top {
   background: rgba(22, 18, 32, 0.6);
@@ -2356,6 +2362,33 @@ body::before {
 }
 .stepper-step.active .stepper-label { color: #a78bfa; font-weight: 700; }
 .stepper-step.pending .stepper-icon { opacity: 0.4; }
+
+/* ===== 768px — tablet / zoomed-in desktop ===== */
+@media (max-width: 768px) {
+  .nav-bar { padding: 12px 20px; }
+  .network-pill { display: none; }
+  .address-pill { font-size: 12px; padding: 5px 10px; }
+  .disconnect-btn { font-size: 12px; padding: 6px 12px; }
+  .connect-btn:not(.large) { font-size: 12px; padding: 6px 14px; }
+  .nav-link { font-size: 12px; padding: 5px 9px; }
+  .bet-widget { max-width: 100%; }
+  .view-card { max-width: 100%; }
+}
+
+/* ===== 640px — small tablet / high zoom ===== */
+@media (max-width: 640px) {
+  .nav-bar { padding: 10px 14px; }
+  .nav-logo .chain-badge,
+  .nav-logo .privacy-badge { display: none; }
+  .logo-text { font-size: 17px; }
+  .nav-link { font-size: 11px; padding: 4px 7px; }
+  .nav-links { gap: 2px; }
+  .market-grid { grid-template-columns: 1fr; }
+  .landing-features { grid-template-columns: 1fr; }
+  .main-content { padding-top: 80px; }
+  .balance-bar { flex-wrap: wrap; gap: 6px; }
+  .shield-row { flex-wrap: wrap; }
+}
 
 @media (max-width: 480px) {
   .nav-bar { padding: 12px 16px; }
