@@ -454,34 +454,38 @@ export function BetWidget({ provider, account, initialMarket, requestedView, bet
     try {
       const amount = ethers.parseEther(betAmount);
       const gasReserve = ethers.parseEther("0.05");
-      const totalNeeded = amount + gasReserve;
-
-      // Pre-check: enough private balance?
-      if (privateBalance < totalNeeded) {
-        const shortfall = totalNeeded - privateBalance;
-        showStatus(`Need ${fmtBal(totalNeeded)} MON in private pool (bet + gas). Shield at least ${fmtBal(shortfall)} more MON first.`, 8000);
-        setLoading(false);
-        return;
-      }
 
       // Ensure burner exists
       if (!burners.find(b => b.index === burnerIndex)) {
         await createBurner(burnerIndex);
       }
 
-      // Fund burner from privacy pool
-      showStatus("Funding burner from privacy pool...", 0);
-      await fund.execute({
-        index: burnerIndex,
-        params: { token: MON_TOKEN, amount: totalNeeded },
-      });
+      // Check if burner already has enough funds (from previous bets/claims)
+      const currentBurnerBal = burnerAddr ? await getBalance(burnerAddr) : 0n;
+      const totalNeeded = amount + gasReserve;
 
-      // Verify burner was actually funded (SDK may fail silently)
-      const fundedAddr = burners.find(b => b.index === burnerIndex)?.address;
-      if (fundedAddr) {
-        await new Promise(r => setTimeout(r, 1000)); // wait for on-chain state
-        const burnerBal = await getBalance(fundedAddr);
-        if (burnerBal < amount) {
+      if (currentBurnerBal >= totalNeeded) {
+        // Burner already has enough — skip funding
+        showStatus("Burner has sufficient funds, placing bet...", 0);
+      } else {
+        // Need to fund the shortfall from private pool
+        const fundAmount = totalNeeded - currentBurnerBal;
+        if (privateBalance < fundAmount) {
+          const totalShort = fundAmount - privateBalance;
+          showStatus(`Insufficient funds. Shield at least ${fmtBal(totalShort)} more MON first.`, 8000);
+          setLoading(false);
+          return;
+        }
+        showStatus("Funding burner from privacy pool...", 0);
+        await fund.execute({
+          index: burnerIndex,
+          params: { token: MON_TOKEN, amount: fundAmount },
+        });
+
+        // Verify burner was actually funded (SDK may fail silently)
+        await new Promise(r => setTimeout(r, 1000));
+        const postFundBal = burnerAddr ? await getBalance(burnerAddr) : 0n;
+        if (postFundBal < amount) {
           throw new Error("Burner funding failed — try again or shield more MON");
         }
       }
