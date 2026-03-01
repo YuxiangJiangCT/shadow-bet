@@ -1068,7 +1068,7 @@ export function BetWidget({ provider, account, initialMarket, requestedView, bet
                   ? "lost"
                   : "active";
                 return (
-                  <div key={i} className={`my-bets-row ${status}`}>
+                  <div key={i} className={`my-bets-row ${status}`} onClick={() => { setSelectedMarket(bet.marketId); setViewStep("bet"); }} style={{ cursor: "pointer" }}>
                     <div className="my-bets-market">
                       <span className="my-bets-question">
                         {m ? (m.question.length > 40 ? m.question.slice(0, 40) + "..." : m.question) : `Market #${bet.marketId}`}
