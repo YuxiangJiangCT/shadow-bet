@@ -106,7 +106,7 @@ export function BetWidget({ provider, account, initialMarket, requestedView, onV
     busy, error: unlinkError, clearError,
   } = useUnlink();
 
-  const { burners, createBurner, fund, send: burnerSend, sweepToPool, getBalance } = useBurner();
+  const { burners, createBurner, fund, send: burnerSend, getBalance } = useBurner();
 
   const [publicBalance, setPublicBalance] = useState<bigint>(0n);
   const [burnerBalance, setBurnerBalance] = useState<bigint>(0n);
@@ -479,22 +479,31 @@ export function BetWidget({ provider, account, initialMarket, requestedView, onV
 
       setLastTxHash(txHash);
 
-      // Sweep winnings back to privacy pool
-      showStatus("Sweeping winnings to privacy pool...", 0);
-      const newBal = burnerAddr ? await getBalance(burnerAddr) : 0n;
-      const sweepAmount = newBal - ethers.parseEther("0.002");
-      if (sweepAmount > 0n) {
-        await sweepToPool.execute({
-          index: burnerIndex,
-          params: { token: MON_TOKEN, amount: sweepAmount },
-        });
-      }
+      // Optimistic: mark bet as claimed so button disappears immediately
+      setMyBets(prev => prev.map(b =>
+        b.marketId === marketId && b.burnerAddr === burnerAddr
+          ? { ...b, claimed: true }
+          : b
+      ));
 
-      showStatus("Winnings claimed and re-shielded!", 8000);
+      // sweepToPool disabled — reverts on Monad testnet
+
+      showStatus("Winnings claimed!", 8000);
       await loadMarkets();
       await loadBurnerBalance();
+      clearError();
     } catch (err: any) {
-      showStatus(`Claim error: ${parseContractError(err)}`);
+      const friendly = parseContractError(err);
+      if (friendly.includes("already claimed")) {
+        setMyBets(prev => prev.map(b =>
+          b.marketId === marketId && b.burnerAddr === burnerAddr
+            ? { ...b, claimed: true }
+            : b
+        ));
+        showStatus("Winnings already claimed.", 5000);
+      } else {
+        showStatus(`Claim error: ${friendly}`);
+      }
     } finally {
       setLoading(false);
     }
