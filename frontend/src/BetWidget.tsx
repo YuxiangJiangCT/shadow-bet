@@ -224,6 +224,7 @@ export function BetWidget({ provider, account, initialMarket, requestedView, bet
 
   const loadMyBets = useCallback(async () => {
     const currentMarkets = marketsRef.current;
+    console.log("[loadMyBets] burners:", burners.length, "markets:", currentMarkets.length, "burnerAddrs:", burners.map(b => b.address));
     if (burners.length === 0 || currentMarkets.length === 0) return;
 
     // Use ONE provider for all queries — only switch RPC on rate limit
@@ -256,6 +257,7 @@ export function BetWidget({ provider, account, initialMarket, requestedView, bet
         }
       }
 
+      console.log(`[loadMyBets] RPC ${url}: success=${successCount}, found=${found.length}, rateLimited=${rateLimited}`);
       // If we got at least one successful call, use this data
       if (successCount > 0) {
         setMyBets(found);
@@ -322,7 +324,6 @@ export function BetWidget({ provider, account, initialMarket, requestedView, bet
   useEffect(() => { loadPublicBalance(); }, [loadPublicBalance]);
   useEffect(() => { loadBurnerBalance(); }, [loadBurnerBalance]);
   // Load bets AFTER markets load + RPC cooldown (avoid rate limit clash)
-  // Use markets.length (not markets) to avoid firing on every new array reference from sort
   const marketsLen = markets.length;
   const burnersLen = burners.length;
   useEffect(() => {
@@ -331,6 +332,13 @@ export function BetWidget({ provider, account, initialMarket, requestedView, bet
     const t2 = setTimeout(() => loadMyBets(), 8000);
     return () => { clearTimeout(t1); clearTimeout(t2); };
   }, [marketsLen, burnersLen]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Also reload bets when entering wallet view (catches cases where initial timers failed)
+  useEffect(() => {
+    if (viewStep === "wallet" && marketsLen > 0 && burnersLen > 0) {
+      loadMyBets();
+    }
+  }, [viewStep]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Sync initialMarket prop
   useEffect(() => {
@@ -1049,14 +1057,30 @@ export function BetWidget({ provider, account, initialMarket, requestedView, bet
             </div>
           ) : (
             <div className="wallet-empty-state">
-              <p>No bets yet</p>
-              <p style={{ marginTop: 8, fontSize: 12, opacity: 0.5 }}>
-                Place your first private bet to see it here
-              </p>
-              {burners.length > 0 && markets.length > 0 && (
-                <button className="quick-btn" onClick={loadMyBets} disabled={isLoading} style={{ marginTop: 8 }}>
-                  Refresh My Bets
-                </button>
+              {burners.length === 0 ? (
+                <>
+                  <p>No burner wallet found</p>
+                  <p style={{ marginTop: 8, fontSize: 12, opacity: 0.5 }}>
+                    Place a bet to create a burner — bets are tied to burner addresses
+                  </p>
+                </>
+              ) : markets.length === 0 ? (
+                <>
+                  <p>Loading markets...</p>
+                  <p style={{ marginTop: 8, fontSize: 12, opacity: 0.5 }}>
+                    Waiting for market data to check your bets
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p>No bets found</p>
+                  <p style={{ marginTop: 8, fontSize: 12, opacity: 0.5 }}>
+                    {burners.length} burner(s) checked across {markets.length} market(s)
+                  </p>
+                  <button className="quick-btn" onClick={loadMyBets} disabled={isLoading} style={{ marginTop: 8 }}>
+                    Retry
+                  </button>
+                </>
               )}
             </div>
           )}
