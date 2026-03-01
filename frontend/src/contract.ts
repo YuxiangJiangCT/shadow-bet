@@ -18,7 +18,7 @@ export const MONAD_TESTNET = {
   currency: { name: "MON", symbol: "MON", decimals: 18 },
 };
 
-export const CONTRACT_ADDRESS = "0x1187167eFA940EA400A8C2c7D91573A2Ec93145A";
+export const CONTRACT_ADDRESS = "0xC52f48c48084e7511B98E117Fb643B13Ac75a77A";
 
 // Native MON token address for Unlink privacy pool
 export const MON_TOKEN = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE";

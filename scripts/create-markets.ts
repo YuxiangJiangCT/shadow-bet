@@ -10,7 +10,7 @@ import * as fs from "fs";
 import * as path from "path";
 
 const RPC = "https://testnet-rpc.monad.xyz";
-const CONTRACT = "0x1187167eFA940EA400A8C2c7D91573A2Ec93145A";
+const CONTRACT = "0xC52f48c48084e7511B98E117Fb643B13Ac75a77A";
 const ABI = [
   "function createMarket(string question, uint256 endTime) returns (uint256)",
   "function resolve(uint256 marketId, uint8 winner)",

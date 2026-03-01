@@ -6,7 +6,7 @@
 
 > Your bets. Your secret. On-chain.
 
-**[Live Demo](https://shadow-bet.vercel.app)** | [Smart Contract](https://testnet.monadexplorer.com/address/0x1187167eFA940EA400A8C2c7D91573A2Ec93145A)
+**[Live Demo](https://shadow-bet.vercel.app)** | [Smart Contract](https://testnet.monadexplorer.com/address/0xC52f48c48084e7511B98E117Fb643B13Ac75a77A)
 
 ## The Problem
 
@@ -115,7 +115,7 @@ sequenceDiagram
 
 ## Smart Contract
 
-**Address:** [`0x1187167eFA940EA400A8C2c7D91573A2Ec93145A`](https://testnet.monadexplorer.com/address/0x1187167eFA940EA400A8C2c7D91573A2Ec93145A)
+**Address:** [`0xC52f48c48084e7511B98E117Fb643B13Ac75a77A`](https://testnet.monadexplorer.com/address/0xC52f48c48084e7511B98E117Fb643B13Ac75a77A)
 
 | Function | Description |
 |----------|-------------|
