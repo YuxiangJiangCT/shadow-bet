@@ -970,12 +970,19 @@ export function BetWidget({ provider, account, initialMarket, requestedView, bet
                 </div>
               )}
 
-              {/* Claim Section */}
-              {market.resolved && !myBets.some(b => b.marketId === market.id && b.claimed) && (
+              {/* Claim Section — only show for winners who haven't claimed */}
+              {market.resolved && myBets.some(b => b.marketId === market.id && b.option === market.winningOption && !b.claimed) && (
                 <div className="claim-section">
                   <button className="claim-btn" onClick={() => handleClaim(market.id)} disabled={isLoading}>
                     {isLoading ? <><span className="spinner" />Claiming...</> : "Claim Winnings"}
                   </button>
+                </div>
+              )}
+
+              {/* Lost bet message */}
+              {market.resolved && myBets.some(b => b.marketId === market.id && b.option !== market.winningOption) && !myBets.some(b => b.marketId === market.id && b.option === market.winningOption) && (
+                <div className="claim-success" style={{ background: "rgba(239, 68, 68, 0.08)", borderColor: "rgba(239, 68, 68, 0.2)" }}>
+                  <p style={{ color: "#f87171" }}>You bet on the losing side</p>
                 </div>
               )}
 
