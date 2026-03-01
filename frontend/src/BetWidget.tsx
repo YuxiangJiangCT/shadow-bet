@@ -79,6 +79,11 @@ function explorerTxUrl(txHash: string): string {
   return `${MONAD_TESTNET.blockExplorer}/tx/${txHash}`;
 }
 
+/** Format Date to local YYYY-MM-DDTHH:MM for datetime-local input */
+function toLocalDateTime(d: Date): string {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
 
 /** Format wei to readable string with max 4 decimal places */
 function fmtBal(wei: bigint, decimals = 18): string {
@@ -126,7 +131,7 @@ export function BetWidget({ provider, account, initialMarket, requestedView, bet
   const [newQuestion, setNewQuestion] = useState("");
   const [newEndTime, setNewEndTime] = useState(() => {
     const d = new Date(Date.now() + 259200 * 1000); // default 3 days
-    return d.toISOString().slice(0, 16);
+    return toLocalDateTime(d);
   });
   const burnerAddr = activeBurner?.address ?? (burners.length > 0 ? burners[0].address : null);
   const isAdmin = account.toLowerCase() === KNOWN_ADMIN.toLowerCase();
@@ -708,7 +713,7 @@ export function BetWidget({ provider, account, initialMarket, requestedView, bet
                     className="quick-btn"
                     onClick={() => {
                       const dt = new Date(Date.now() + d.val * 1000);
-                      setNewEndTime(dt.toISOString().slice(0, 16));
+                      setNewEndTime(toLocalDateTime(dt));
                     }}
                   >
                     {d.label}
