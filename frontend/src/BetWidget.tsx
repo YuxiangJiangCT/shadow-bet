@@ -80,6 +80,9 @@ function explorerTxUrl(txHash: string): string {
   return `${MONAD_TESTNET.blockExplorer}/tx/${txHash}`;
 }
 
+// Dedicated public RPC for read-only market queries — avoids competing with MetaMask wallet RPC
+const widgetPublicProvider = new ethers.JsonRpcProvider(MONAD_TESTNET.rpcUrl);
+
 /** Format wei to readable string with max 4 decimal places */
 function fmtBal(wei: bigint, decimals = 18): string {
   const str = ethers.formatUnits(wei, decimals);
@@ -155,9 +158,10 @@ export function BetWidget({ provider, account, initialMarket, requestedView, onV
   }, [burnerAddr, getBalance]);
 
   // --- Load markets (rate-limit resilient) ---
+  // Uses dedicated public RPC to avoid competing with MetaMask wallet RPC for balance/tx queries
   const loadMarkets = useCallback(async () => {
     try {
-      const contract = new ethers.Contract(CONTRACT_ADDRESS, SHADOWBET_ABI, provider);
+      const contract = new ethers.Contract(CONTRACT_ADDRESS, SHADOWBET_ABI, widgetPublicProvider);
       const count = await contract.marketCount();
       const loaded: Market[] = [];
       for (let i = 0; i < Number(count); i++) {
@@ -191,7 +195,7 @@ export function BetWidget({ provider, account, initialMarket, requestedView, onV
     } catch (err) {
       console.error("Failed to load markets:", err);
     }
-  }, [provider]);
+  }, []); // stable — uses module-level publicProvider, not wallet provider
 
   // --- My Bets state ---
   const [myBets, setMyBets] = useState<MyBet[]>([]);
