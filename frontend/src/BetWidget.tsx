@@ -560,7 +560,9 @@ export function BetWidget({ provider, account, initialMarket, requestedView, bet
       { label: "Claim",  icon: "\ud83d\udcb0" },
       { label: "Re-shield", icon: "\ud83d\udd12" },
     ];
-    const activeIdx = active ? 1 : !m.resolved ? 2 : 3;
+    // Resolved markets: full cycle complete (funds stay private in burner)
+    if (m.resolved) return steps.map(s => ({ ...s, state: "completed" as const }));
+    const activeIdx = active ? 1 : 2; // active=betting, ended=settling
     return steps.map((s, i) => ({
       ...s,
       state: i < activeIdx ? "completed" as const
