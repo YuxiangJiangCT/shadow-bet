@@ -28,6 +28,32 @@ interface MarketData {
 // Public RPC provider for read-only access (no wallet needed)
 const publicProvider = new ethers.JsonRpcProvider(MONAD_TESTNET.rpcUrl);
 
+/** Sort markets: Active (by pool size desc) → Ended (by endTime asc) → Resolved (by id desc) */
+function sortMarkets(markets: MarketData[]): MarketData[] {
+  const now = Math.floor(Date.now() / 1000);
+  const statusPriority = (m: MarketData) => {
+    if (m.resolved) return 2;
+    if (m.endTime > now) return 0;
+    return 1;
+  };
+  return [...markets].sort((a, b) => {
+    const pa = statusPriority(a), pb = statusPriority(b);
+    if (pa !== pb) return pa - pb;
+    if (pa === 0) {
+      // Active: bigger pool first
+      const poolA = a.yesPool + a.noPool;
+      const poolB = b.yesPool + b.noPool;
+      return poolB > poolA ? 1 : poolB < poolA ? -1 : 0;
+    }
+    if (pa === 1) {
+      // Ended: earliest endTime first (ready to resolve)
+      return a.endTime - b.endTime;
+    }
+    // Resolved: newest id first
+    return b.id - a.id;
+  });
+}
+
 function App() {
   const [account, setAccount] = useState<string | null>(null);
   const [provider, setProvider] = useState<ethers.BrowserProvider | null>(null);
@@ -108,7 +134,7 @@ function App() {
         seen.add(key);
         return true;
       });
-      setPublicMarkets(unique);
+      setPublicMarkets(sortMarkets(unique));
     } catch (err) {
       console.error("Failed to load public markets:", err);
     }

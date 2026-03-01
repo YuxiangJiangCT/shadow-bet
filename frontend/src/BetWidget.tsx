@@ -34,6 +34,27 @@ interface MyBet {
 
 const iface = new ethers.Interface(SHADOWBET_ABI);
 
+/** Sort markets: Active (by pool size desc) → Ended (by endTime asc) → Resolved (by id desc) */
+function sortMarkets(markets: Market[]): Market[] {
+  const now = Math.floor(Date.now() / 1000);
+  const statusPriority = (m: Market) => {
+    if (m.resolved) return 2;
+    if (m.endTime > now) return 0;
+    return 1;
+  };
+  return [...markets].sort((a, b) => {
+    const pa = statusPriority(a), pb = statusPriority(b);
+    if (pa !== pb) return pa - pb;
+    if (pa === 0) {
+      const poolA = a.yesPool + a.noPool;
+      const poolB = b.yesPool + b.noPool;
+      return poolB > poolA ? 1 : poolB < poolA ? -1 : 0;
+    }
+    if (pa === 1) return a.endTime - b.endTime;
+    return b.id - a.id;
+  });
+}
+
 /** Parse contract revert errors into friendly messages */
 function parseContractError(err: any): string {
   // Try to decode custom error from data field
@@ -165,7 +186,7 @@ export function BetWidget({ provider, account, initialMarket, requestedView, onV
         seen.add(key);
         return true;
       });
-      setMarkets(unique);
+      setMarkets(sortMarkets(unique));
     } catch (err) {
       console.error("Failed to load markets:", err);
     }
