@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { ethers } from "ethers";
-import { MONAD_TESTNET, CONTRACT_ADDRESS, SHADOWBET_ABI } from "./contract";
+import { CONTRACT_ADDRESS, SHADOWBET_ABI, withFallback } from "./contract";
 
 export interface AuditEvent {
   blockNumber: number;
@@ -19,16 +19,7 @@ export interface AuditData {
   error: string | null;
 }
 
-const provider = new ethers.FallbackProvider(
-  MONAD_TESTNET.publicRpcUrls.map((url, i) => ({
-    provider: new ethers.JsonRpcProvider(url),
-    priority: i + 1,
-    stallTimeout: 750,
-    weight: 1,
-  })),
-  1
-);
-const contract = new ethers.Contract(CONTRACT_ADDRESS, SHADOWBET_ABI, provider);
+// provider and contract are created per-call inside withFallback — no module-level instance
 
 const CHUNK_SIZE = 1000; // Monad eth_getLogs limit
 const MAX_CHUNKS = 200; // ~200k blocks ≈ 22 hours of history
@@ -46,8 +37,7 @@ export function useOnChainAudit(): AuditData {
 
     async function fetchEvents() {
       try {
-        const currentBlock = await provider.getBlockNumber();
-        const filter = contract.filters.BetPlaced();
+        const currentBlock = await withFallback(p => p.getBlockNumber());
         const allEvents: ethers.EventLog[] = [];
 
         // Query backwards from latest block in chunks of 1000
@@ -58,11 +48,10 @@ export function useOnChainAudit(): AuditData {
           if (toBlock < 0) break;
 
           try {
-            const chunk = (await contract.queryFilter(
-              filter,
-              fromBlock,
-              toBlock
-            )) as ethers.EventLog[];
+            const chunk = (await withFallback(p => {
+              const c = new ethers.Contract(CONTRACT_ADDRESS, SHADOWBET_ABI, p);
+              return c.queryFilter(c.filters.BetPlaced(), fromBlock, toBlock);
+            })) as ethers.EventLog[];
             allEvents.push(...chunk);
           } catch {
             // Single chunk failure — skip and continue

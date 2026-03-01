@@ -5,7 +5,7 @@ import { HowItWorks } from "./HowItWorks";
 import { MarketCard } from "./MarketCard";
 import { MarketDetail } from "./MarketDetail";
 import { PrivacyProof } from "./PrivacyProof";
-import { MONAD_TESTNET, CONTRACT_ADDRESS, SHADOWBET_ABI, KNOWN_ADMIN } from "./contract";
+import { MONAD_TESTNET, CONTRACT_ADDRESS, SHADOWBET_ABI, KNOWN_ADMIN, withFallback } from "./contract";
 import { useOnChainAudit } from "./useOnChainAudit";
 import "./App.css";
 
@@ -25,16 +25,6 @@ interface MarketData {
   winningOption: number;
 }
 
-// FallbackProvider: tries multiple public RPCs in order, auto-failovers on 429
-const publicProvider = new ethers.FallbackProvider(
-  MONAD_TESTNET.publicRpcUrls.map((url, i) => ({
-    provider: new ethers.JsonRpcProvider(url),
-    priority: i + 1,   // lower = higher priority
-    stallTimeout: 750,
-    weight: 1,
-  })),
-  1 // quorum=1: first successful response wins
-);
 
 /** Sort markets: Active (by pool size desc) → Ended (by endTime asc) → Resolved (by id desc) */
 function sortMarkets(markets: MarketData[]): MarketData[] {
@@ -110,29 +100,29 @@ function App() {
     return () => window.removeEventListener("hashchange", onHash);
   }, []);
 
-  // Load markets from public RPC (rate-limit resilient)
+  // Load markets from public RPC — sequential fallback across nodes (no broadcast)
   const loadPublicMarkets = useCallback(async () => {
     try {
-      const contract = new ethers.Contract(CONTRACT_ADDRESS, SHADOWBET_ABI, publicProvider);
-      const count = await contract.marketCount();
+      const count = await withFallback(p =>
+        new ethers.Contract(CONTRACT_ADDRESS, SHADOWBET_ABI, p).marketCount()
+      );
       const loaded: MarketData[] = [];
       for (let i = 0; i < Number(count); i++) {
-        for (let attempt = 0; attempt < 3; attempt++) {
-          try {
-            const m = await contract.getMarket(i);
-            loaded.push({
-              id: i,
-              question: m.question,
-              endTime: Number(m.endTime),
-              yesPool: m.yesPool,
-              noPool: m.noPool,
-              resolved: m.resolved,
-              winningOption: Number(m.winningOption),
-            });
-            break;
-          } catch {
-            if (attempt < 2) await new Promise(r => setTimeout(r, 1000 * (attempt + 1)));
-          }
+        try {
+          const m = await withFallback(p =>
+            new ethers.Contract(CONTRACT_ADDRESS, SHADOWBET_ABI, p).getMarket(i)
+          );
+          loaded.push({
+            id: i,
+            question: m.question,
+            endTime: Number(m.endTime),
+            yesPool: m.yesPool,
+            noPool: m.noPool,
+            resolved: m.resolved,
+            winningOption: Number(m.winningOption),
+          });
+        } catch {
+          // skip single market fetch failure
         }
       }
       // Deduplicate by question (keep first occurrence = lower ID)

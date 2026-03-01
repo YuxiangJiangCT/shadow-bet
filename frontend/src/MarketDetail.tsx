@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { ethers } from "ethers";
 import { useOnChainAudit } from "./useOnChainAudit";
-import { MONAD_TESTNET, CONTRACT_ADDRESS, SHADOWBET_ABI } from "./contract";
+import { MONAD_TESTNET, CONTRACT_ADDRESS, SHADOWBET_ABI, withFallback } from "./contract";
 
 interface MarketData {
   question: string;
@@ -20,16 +20,7 @@ interface MarketDetailProps {
   onBack: () => void;
 }
 
-const provider = new ethers.FallbackProvider(
-  MONAD_TESTNET.publicRpcUrls.map((url, i) => ({
-    provider: new ethers.JsonRpcProvider(url),
-    priority: i + 1,
-    stallTimeout: 750,
-    weight: 1,
-  })),
-  1
-);
-const contract = new ethers.Contract(CONTRACT_ADDRESS, SHADOWBET_ABI, provider);
+// provider and contract are created per-call inside withFallback
 
 function fmtPool(wei: bigint): string {
   const str = ethers.formatEther(wei);
@@ -65,7 +56,9 @@ export function MarketDetail({ marketId, account, onConnect, onBet, onBack }: Ma
     let cancelled = false;
     async function load() {
       try {
-        const m = await contract.getMarket(marketId);
+        const m = await withFallback(p =>
+          new ethers.Contract(CONTRACT_ADDRESS, SHADOWBET_ABI, p).getMarket(marketId)
+        );
         if (cancelled) return;
         setMarket({
           question: m.question,

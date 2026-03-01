@@ -1,4 +1,5 @@
 // ShadowBet contract ABI and configuration
+import { ethers } from "ethers";
 
 export const MONAD_TESTNET = {
   chainId: 10143,
@@ -56,6 +57,45 @@ export const SHADOWBET_ABI = [
   "event MarketResolved(uint256 indexed id, uint8 winningOption)",
   "event Claimed(uint256 indexed id, address indexed user, uint256 amount)",
 ];
+
+/**
+ * Wraps an async RPC call with sequential fallback across publicRpcUrls.
+ * Only moves to the next node on rate-limit errors (429/-32007/-32090).
+ * Normal errors (revert, not-found, etc.) are thrown immediately.
+ *
+ * Usage:
+ *   const result = await withFallback(async (provider) => {
+ *     const contract = new ethers.Contract(addr, abi, provider);
+ *     return contract.someMethod();
+ *   });
+ */
+export async function withFallback<T>(
+  fn: (provider: ethers.JsonRpcProvider) => Promise<T>
+): Promise<T> {
+  const urls = MONAD_TESTNET.publicRpcUrls;
+  let lastErr: unknown;
+  for (const url of urls) {
+    const provider = new ethers.JsonRpcProvider(url, MONAD_TESTNET.chainId, {
+      staticNetwork: true,
+    });
+    try {
+      return await fn(provider);
+    } catch (err: any) {
+      const isRateLimit =
+        err?.error?.code === -32007 ||
+        err?.error?.code === -32090 ||
+        err?.status === 429 ||
+        String(err?.message).includes("429") ||
+        String(err?.message).includes("rate limit") ||
+        String(err?.message).includes("Too many requests") ||
+        String(err?.shortMessage).includes("missing response");
+      if (!isRateLimit) throw err; // non-rate-limit: don't retry
+      lastErr = err;
+      // rate limited: try next URL
+    }
+  }
+  throw lastErr;
+}
 
 /** Known admin address — used for UI-only visibility (on-chain still enforces onlyAdmin) */
 export const KNOWN_ADMIN = "0x9b50ED6a40e98215b2d2da5CE2E948c28AB7eCF5";

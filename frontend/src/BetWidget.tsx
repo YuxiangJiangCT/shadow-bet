@@ -1,7 +1,7 @@
 import { Fragment, useState, useEffect, useCallback, useRef } from "react";
 import { ethers } from "ethers";
 import { useUnlink, useBurner } from "@unlink-xyz/react";
-import { SHADOWBET_ABI, CONTRACT_ADDRESS, MON_TOKEN, MONAD_TESTNET, ERROR_MESSAGES, KNOWN_ADMIN } from "./contract";
+import { SHADOWBET_ABI, CONTRACT_ADDRESS, MON_TOKEN, MONAD_TESTNET, ERROR_MESSAGES, KNOWN_ADMIN, withFallback } from "./contract";
 import { MarketCard, formatTimeLeft } from "./MarketCard";
 
 interface Market {
@@ -80,17 +80,6 @@ function explorerTxUrl(txHash: string): string {
   return `${MONAD_TESTNET.blockExplorer}/tx/${txHash}`;
 }
 
-// FallbackProvider for read-only market queries — avoids competing with MetaMask wallet RPC
-// Tries multiple public RPCs in priority order, auto-failovers on 429
-const widgetPublicProvider = new ethers.FallbackProvider(
-  MONAD_TESTNET.publicRpcUrls.map((url, i) => ({
-    provider: new ethers.JsonRpcProvider(url),
-    priority: i + 1,
-    stallTimeout: 750,
-    weight: 1,
-  })),
-  1
-);
 
 /** Format wei to readable string with max 4 decimal places */
 function fmtBal(wei: bigint, decimals = 18): string {
@@ -166,30 +155,29 @@ export function BetWidget({ provider, account, initialMarket, requestedView, onV
     } catch { /* ignore */ }
   }, [burnerAddr, getBalance]);
 
-  // --- Load markets (rate-limit resilient) ---
-  // Uses dedicated public RPC to avoid competing with MetaMask wallet RPC for balance/tx queries
+  // --- Load markets — sequential fallback, no broadcast ---
   const loadMarkets = useCallback(async () => {
     try {
-      const contract = new ethers.Contract(CONTRACT_ADDRESS, SHADOWBET_ABI, widgetPublicProvider);
-      const count = await contract.marketCount();
+      const count = await withFallback(p =>
+        new ethers.Contract(CONTRACT_ADDRESS, SHADOWBET_ABI, p).marketCount()
+      );
       const loaded: Market[] = [];
       for (let i = 0; i < Number(count); i++) {
-        for (let attempt = 0; attempt < 3; attempt++) {
-          try {
-            const m = await contract.getMarket(i);
-            loaded.push({
-              id: i,
-              question: m.question,
-              endTime: Number(m.endTime),
-              yesPool: m.yesPool,
-              noPool: m.noPool,
-              resolved: m.resolved,
-              winningOption: Number(m.winningOption),
-            });
-            break;
-          } catch {
-            if (attempt < 2) await new Promise(r => setTimeout(r, 1000 * (attempt + 1)));
-          }
+        try {
+          const m = await withFallback(p =>
+            new ethers.Contract(CONTRACT_ADDRESS, SHADOWBET_ABI, p).getMarket(i)
+          );
+          loaded.push({
+            id: i,
+            question: m.question,
+            endTime: Number(m.endTime),
+            yesPool: m.yesPool,
+            noPool: m.noPool,
+            resolved: m.resolved,
+            winningOption: Number(m.winningOption),
+          });
+        } catch {
+          // skip single market fetch failure
         }
       }
       // Deduplicate by question (keep first occurrence = lower ID)
@@ -204,7 +192,7 @@ export function BetWidget({ provider, account, initialMarket, requestedView, onV
     } catch (err) {
       console.error("Failed to load markets:", err);
     }
-  }, []); // stable — uses module-level publicProvider, not wallet provider
+  }, []); // stable — withFallback creates fresh providers per call
 
   // --- My Bets state ---
   const [myBets, setMyBets] = useState<MyBet[]>([]);
