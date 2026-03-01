@@ -207,22 +207,25 @@ export function BetWidget({ provider, account, initialMarket, requestedView, bet
 
   const loadMyBets = useCallback(async () => {
     const currentMarkets = marketsRef.current;
-    if (burners.length === 0 || currentMarkets.length === 0) { setMyBets([]); return; }
+    if (burners.length === 0 || currentMarkets.length === 0) return;
     try {
       const found: MyBet[] = [];
+      let successCount = 0;
       for (const b of burners) {
         for (const m of currentMarkets) {
           try {
             const bet = await withFallback(p =>
               new ethers.Contract(CONTRACT_ADDRESS, SHADOWBET_ABI, p).getBet(m.id, b.address)
             );
+            successCount++;
             if (bet.amount > 0n) {
               found.push({ marketId: m.id, burnerAddr: b.address, amount: bet.amount, option: Number(bet.option), claimed: bet.claimed });
             }
           } catch { /* skip single bet lookup failure */ }
         }
       }
-      setMyBets(found);
+      // Only replace state if at least one RPC call succeeded — preserve optimistic data otherwise
+      if (successCount > 0) setMyBets(found);
     } catch { /* ignore */ }
   }, [burners]); // markets via ref, RPC via withFallback — no provider dep needed
 
@@ -451,7 +454,6 @@ export function BetWidget({ provider, account, initialMarket, requestedView, bet
       clearError(); // dismiss any lingering SDK errors
 
       await loadBurnerBalance();
-      await loadMyBets();
       setViewStep("wallet");
       showStatus("Bet placed privately! Markets will refresh shortly.", 8000);
       // Background reload after sweep settles
