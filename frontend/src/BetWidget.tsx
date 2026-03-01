@@ -117,6 +117,7 @@ export function BetWidget({ provider, account, initialMarket, requestedView, onV
   const [burnerIndex, setBurnerIndex] = useState(0);
   const [lastTxHash, setLastTxHash] = useState<string | null>(null);
   const [viewStep, setViewStep] = useState<"browse" | "bet" | "wallet" | "admin">("browse");
+  const [marketFilter, setMarketFilter] = useState<"all" | "active" | "ended" | "resolved">("all");
 
   const privateBalance = balances[MON_TOKEN] ?? balances[MON_TOKEN.toLowerCase()] ?? 0n;
   const activeBurner = burners.find(b => b.index === burnerIndex);
@@ -602,23 +603,58 @@ export function BetWidget({ provider, account, initialMarket, requestedView, onV
       {/* ===== VIEW: Browse Markets ===== */}
       {viewStep === "browse" && (
         <div className="view-browse">
+          {/* Filter Tabs */}
+          {markets.length > 0 && (() => {
+            const now = Math.floor(Date.now() / 1000);
+            const counts = {
+              all: markets.length,
+              active: markets.filter(m => !m.resolved && m.endTime > now).length,
+              ended: markets.filter(m => !m.resolved && m.endTime <= now).length,
+              resolved: markets.filter(m => m.resolved).length,
+            };
+            return (
+              <div className="market-filter-tabs">
+                {(["all", "active", "ended", "resolved"] as const).map(f => (
+                  <button
+                    key={f}
+                    className={`filter-tab ${marketFilter === f ? "active" : ""}`}
+                    onClick={() => setMarketFilter(f)}
+                  >
+                    {f.charAt(0).toUpperCase() + f.slice(1)}
+                    <span className="filter-count">{counts[f]}</span>
+                  </button>
+                ))}
+              </div>
+            );
+          })()}
           {/* Market Grid */}
-          {markets.length > 0 ? (
-            <div className="market-grid">
-              {markets.map((m) => (
-                <MarketCard
-                  key={m.id}
-                  market={m}
-                  selected={selectedMarket === m.id}
-                  onClick={() => {
-                    setSelectedMarket(m.id);
-                    setViewStep("bet");
-                  }}
-                  betCount={betsByMarket?.[m.id]}
-                />
-              ))}
-            </div>
-          ) : (
+          {markets.length > 0 ? (() => {
+            const now = Math.floor(Date.now() / 1000);
+            const filtered = markets.filter(m => {
+              if (marketFilter === "active") return !m.resolved && m.endTime > now;
+              if (marketFilter === "ended") return !m.resolved && m.endTime <= now;
+              if (marketFilter === "resolved") return m.resolved;
+              return true;
+            });
+            return filtered.length > 0 ? (
+              <div className="market-grid">
+                {filtered.map((m) => (
+                  <MarketCard
+                    key={m.id}
+                    market={m}
+                    selected={selectedMarket === m.id}
+                    onClick={() => {
+                      setSelectedMarket(m.id);
+                      setViewStep("bet");
+                    }}
+                    betCount={betsByMarket?.[m.id]}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="no-markets">No {marketFilter} markets</div>
+            );
+          })() : (
             <div className="no-markets">No markets yet</div>
           )}
         </div>

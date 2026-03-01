@@ -75,6 +75,7 @@ function App() {
   const [marketId, setMarketId] = useState<number | null>(initialRoute.marketId);
   const [initialMarket, setInitialMarket] = useState<number | null>(null);
   const [widgetView, setWidgetView] = useState<string | null>(null);
+  const [landingFilter, setLandingFilter] = useState<"all" | "active" | "ended" | "resolved">("all");
 
   const isMetaMaskInstalled = typeof window.ethereum !== "undefined";
   const isAdmin = account?.toLowerCase() === KNOWN_ADMIN.toLowerCase();
@@ -351,23 +352,56 @@ function App() {
             </div>
 
             {/* Live Markets (read-only) */}
-            {publicMarkets.length > 0 && (
-              <div className="landing-markets">
-                <h3 className="landing-section-title">Live Markets</h3>
-                <div className="market-grid">
-                  {publicMarkets.map((m) => (
-                    <MarketCard
-                      key={m.id}
-                      market={m}
-                      selected={false}
-                      onClick={() => navigateTo("market", m.id)}
-                      betCount={betsByMarket[m.id]}
-                    />
-                  ))}
+            {publicMarkets.length > 0 && (() => {
+              const now = Math.floor(Date.now() / 1000);
+              const counts = {
+                all: publicMarkets.length,
+                active: publicMarkets.filter(m => !m.resolved && m.endTime > now).length,
+                ended: publicMarkets.filter(m => !m.resolved && m.endTime <= now).length,
+                resolved: publicMarkets.filter(m => m.resolved).length,
+              };
+              const filtered = publicMarkets.filter(m => {
+                if (landingFilter === "active") return !m.resolved && m.endTime > now;
+                if (landingFilter === "ended") return !m.resolved && m.endTime <= now;
+                if (landingFilter === "resolved") return m.resolved;
+                return true;
+              });
+              return (
+                <div className="landing-markets">
+                  <div className="landing-markets-header">
+                    <h3 className="landing-section-title">Markets</h3>
+                    <div className="market-filter-tabs">
+                      {(["all", "active", "ended", "resolved"] as const).map(f => (
+                        <button
+                          key={f}
+                          className={`filter-tab ${landingFilter === f ? "active" : ""}`}
+                          onClick={() => setLandingFilter(f)}
+                        >
+                          {f.charAt(0).toUpperCase() + f.slice(1)}
+                          <span className="filter-count">{counts[f]}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  {filtered.length > 0 ? (
+                    <div className="market-grid">
+                      {filtered.map((m) => (
+                        <MarketCard
+                          key={m.id}
+                          market={m}
+                          selected={false}
+                          onClick={() => navigateTo("market", m.id)}
+                          betCount={betsByMarket[m.id]}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="no-markets">No {landingFilter} markets</div>
+                  )}
+                  <p className="landing-hint">Connect wallet to place a private bet</p>
                 </div>
-                <p className="landing-hint">Connect wallet to place a private bet</p>
-              </div>
-            )}
+              );
+            })()}
 
             {/* Features */}
             <div className="landing-features">

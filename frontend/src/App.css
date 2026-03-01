@@ -2325,6 +2325,76 @@ body::before {
   animation: fadeSlideUp 0.2s ease-out;
 }
 
+/* Market filter tabs */
+.market-filter-tabs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.filter-tab {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 12px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-transform: capitalize;
+}
+
+.filter-tab:hover {
+  border-color: rgba(255, 255, 255, 0.2);
+  color: rgba(255, 255, 255, 0.8);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.filter-tab.active {
+  border-color: #7c3aed;
+  background: rgba(124, 58, 237, 0.15);
+  color: #a78bfa;
+}
+
+.filter-count {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.4);
+  min-width: 16px;
+  text-align: center;
+}
+
+.filter-tab.active .filter-count {
+  background: rgba(124, 58, 237, 0.25);
+  color: #a78bfa;
+}
+
+/* Landing markets header (title + filter tabs on same row) */
+.landing-markets-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.landing-markets-header .landing-section-title {
+  margin-bottom: 0;
+}
+
+.landing-markets-header .market-filter-tabs {
+  margin-bottom: 0;
+}
+
 .wallet-empty-state {
   text-align: center;
   padding: 20px;
