@@ -21,6 +21,7 @@ interface BetWidgetProps {
   requestedView?: string | null;
   onViewChanged?: () => void;
   betsByMarket?: Record<number, number>;
+  onViewStep?: (view: string) => void;
 }
 
 interface MyBet {
@@ -66,7 +67,7 @@ function fmtBal(wei: bigint, decimals = 18): string {
   return `${int}.${dec.slice(0, 4)}`;
 }
 
-export function BetWidget({ provider, account, initialMarket, requestedView, onViewChanged, betsByMarket }: BetWidgetProps) {
+export function BetWidget({ provider, account, initialMarket, requestedView, onViewChanged, betsByMarket, onViewStep }: BetWidgetProps) {
   // --- Market state ---
   const [markets, setMarkets] = useState<Market[]>([]);
   const [selectedMarket, setSelectedMarket] = useState<number | null>(initialMarket ?? null);
@@ -189,7 +190,7 @@ export function BetWidget({ provider, account, initialMarket, requestedView, onV
               }
               break;
             } catch {
-              if (attempt === 0) await new Promise(r => setTimeout(r, 500));
+              if (attempt === 0) await new Promise(r => setTimeout(r, 1500));
             }
           }
         }
@@ -242,10 +243,12 @@ export function BetWidget({ provider, account, initialMarket, requestedView, onV
   useEffect(() => { loadPublicBalance(); }, [loadPublicBalance]);
   useEffect(() => { loadBurnerBalance(); }, [loadBurnerBalance]);
   // Load bets AFTER markets load + RPC cooldown (avoid rate limit clash)
+  // Second pass at 8s catches any races or rate-limit failures from the first pass
   useEffect(() => {
     if (markets.length === 0 || burners.length === 0) return;
-    const timer = setTimeout(() => loadMyBets(), 3000);
-    return () => clearTimeout(timer);
+    const t1 = setTimeout(() => loadMyBets(), 3000);
+    const t2 = setTimeout(() => loadMyBets(), 8000);
+    return () => { clearTimeout(t1); clearTimeout(t2); };
   }, [markets, burners, loadMyBets]);
 
   // Sync initialMarket prop
@@ -268,6 +271,18 @@ export function BetWidget({ provider, account, initialMarket, requestedView, onV
   useEffect(() => {
     if (viewStep === "browse") loadMarkets();
   }, [viewStep, loadMarkets]);
+
+  // Report viewStep changes back to App for nav highlight
+  useEffect(() => {
+    onViewStep?.(viewStep);
+  }, [viewStep, onViewStep]);
+
+  // Auto-dismiss SDK errors after 3s (sweep/fund errors fire asynchronously)
+  useEffect(() => {
+    if (!unlinkError) return;
+    const t = setTimeout(() => clearError(), 3000);
+    return () => clearTimeout(t);
+  }, [unlinkError, clearError]);
 
   // --- Determine setup step ---
   useEffect(() => {

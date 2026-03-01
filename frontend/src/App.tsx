@@ -228,14 +228,14 @@ function App() {
         {/* Center: Navigation */}
         <div className="nav-links">
           <button
-            className={`nav-link ${page === "app" ? "active" : ""}`}
+            className={`nav-link ${page === "app" && (widgetView === "browse" || widgetView === "bet" || widgetView === null) ? "active" : ""}`}
             onClick={() => { setWidgetView("browse"); navigateTo("app"); }}
           >
             Markets
           </button>
           {account && isAdmin && (
             <button
-              className="nav-link"
+              className={`nav-link ${page === "app" && widgetView === "admin" ? "active" : ""}`}
               onClick={() => { setWidgetView("admin"); navigateTo("app"); }}
             >
               Create
@@ -243,7 +243,7 @@ function App() {
           )}
           {account && (
             <button
-              className="nav-link"
+              className={`nav-link ${page === "app" && widgetView === "wallet" ? "active" : ""}`}
               onClick={() => { setWidgetView("wallet"); navigateTo("app"); }}
             >
               Wallet
@@ -388,7 +388,7 @@ function App() {
             </div>
           </div>
         ) : (
-          <BetWidget provider={provider!} account={account} initialMarket={initialMarket} requestedView={widgetView} onViewChanged={() => setWidgetView(null)} betsByMarket={betsByMarket} />
+          <BetWidget provider={provider!} account={account} initialMarket={initialMarket} requestedView={widgetView} onViewChanged={() => setWidgetView(null)} betsByMarket={betsByMarket} onViewStep={(v) => setWidgetView(v)} />
         )}
       </main>
 
