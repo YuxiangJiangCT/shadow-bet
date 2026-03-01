@@ -9,10 +9,10 @@ export const MONAD_TESTNET = {
   rpcUrl: "https://testnet-rpc.monad.xyz",
   // Fallback RPCs for read-only queries — tried in order when primary is rate-limited
   publicRpcUrls: [
-    "https://rpc.ankr.com/monad_testnet",
-    "https://monad-testnet.drpc.org",
-    "https://rpc-testnet.monadinfra.com",
     "https://testnet-rpc.monad.xyz",
+    "https://rpc.ankr.com/monad_testnet",
+    "https://rpc-testnet.monadinfra.com",
+    // drpc.org removed — CORS blocks browser requests from Vercel
   ],
   blockExplorer: "https://testnet.monadexplorer.com",
   currency: { name: "MON", symbol: "MON", decimals: 18 },
@@ -81,15 +81,19 @@ export async function withFallback<T>(
     try {
       return await fn(provider);
     } catch (err: any) {
-      const isRateLimit =
+      const msg = String(err?.message ?? "");
+      const isRetryable =
         err?.error?.code === -32007 ||
         err?.error?.code === -32090 ||
         err?.status === 429 ||
-        String(err?.message).includes("429") ||
-        String(err?.message).includes("rate limit") ||
-        String(err?.message).includes("Too many requests") ||
-        String(err?.shortMessage).includes("missing response");
-      if (!isRateLimit) throw err; // non-rate-limit: don't retry
+        msg.includes("429") ||
+        msg.includes("rate limit") ||
+        msg.includes("Too many requests") ||
+        msg.includes("Failed to fetch") ||
+        msg.includes("fetch failed") ||
+        msg.includes("NetworkError") ||
+        String(err?.shortMessage ?? "").includes("missing response");
+      if (!isRetryable) throw err; // non-network/rate-limit: don't retry
       lastErr = err;
       // rate limited: try next URL
     }

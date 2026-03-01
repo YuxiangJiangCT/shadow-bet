@@ -190,7 +190,9 @@ export function BetWidget({ provider, account, initialMarket, requestedView, bet
             const msg = String(err?.message ?? "");
             const isRL = err?.error?.code === -32007 || err?.error?.code === -32090 ||
               err?.status === 429 || msg.includes("429") || msg.includes("rate limit") ||
-              msg.includes("Too many requests") || String(err?.shortMessage ?? "").includes("missing response");
+              msg.includes("Too many requests") || msg.includes("Failed to fetch") ||
+              msg.includes("fetch failed") || msg.includes("NetworkError") ||
+              String(err?.shortMessage ?? "").includes("missing response");
             if (isRL) { rateLimited = true; break; }
             // else: skip single market (contract error)
           }
@@ -250,7 +252,9 @@ export function BetWidget({ provider, account, initialMarket, requestedView, bet
             const msg = String(err?.message ?? "");
             const isRL = err?.error?.code === -32007 || err?.error?.code === -32090 ||
               err?.status === 429 || msg.includes("429") || msg.includes("rate limit") ||
-              msg.includes("Too many requests") || String(err?.shortMessage ?? "").includes("missing response");
+              msg.includes("Too many requests") || msg.includes("Failed to fetch") ||
+              msg.includes("fetch failed") || msg.includes("NetworkError") ||
+              String(err?.shortMessage ?? "").includes("missing response");
             if (isRL) { rateLimited = true; } // try next RPC
             // else: skip this bet (contract revert, etc.)
           }
