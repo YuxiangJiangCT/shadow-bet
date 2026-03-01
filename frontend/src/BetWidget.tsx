@@ -86,7 +86,7 @@ const widgetPublicProvider = new ethers.FallbackProvider(
   MONAD_TESTNET.publicRpcUrls.map((url, i) => ({
     provider: new ethers.JsonRpcProvider(url),
     priority: i + 1,
-    stallTimeout: 2000,
+    stallTimeout: 750,
     weight: 1,
   })),
   1

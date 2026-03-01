@@ -6,7 +6,7 @@ import App from './App.tsx'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <UnlinkProvider chain="monad-testnet" {...{ chainRpcUrl: "https://testnet-rpc.monad.xyz" } as any}>
+    <UnlinkProvider chain="monad-testnet" {...{ chainRpcUrl: "https://rpc.ankr.com/monad_testnet" } as any}>
       <App />
     </UnlinkProvider>
   </StrictMode>,

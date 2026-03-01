@@ -19,7 +19,15 @@ export interface AuditData {
   error: string | null;
 }
 
-const provider = new ethers.JsonRpcProvider(MONAD_TESTNET.rpcUrl);
+const provider = new ethers.FallbackProvider(
+  MONAD_TESTNET.publicRpcUrls.map((url, i) => ({
+    provider: new ethers.JsonRpcProvider(url),
+    priority: i + 1,
+    stallTimeout: 750,
+    weight: 1,
+  })),
+  1
+);
 const contract = new ethers.Contract(CONTRACT_ADDRESS, SHADOWBET_ABI, provider);
 
 const CHUNK_SIZE = 1000; // Monad eth_getLogs limit
