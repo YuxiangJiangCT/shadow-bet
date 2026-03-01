@@ -383,6 +383,15 @@ export function BetWidget({ provider, account, initialMarket, requestedView, bet
     setSetupStep("ready");
   }, [ready, walletExists, activeAccount]);
 
+  // Auto-create burner if wallet is ready but no burners exist
+  // (SDK doesn't always persist burner keys across page reloads)
+  useEffect(() => {
+    if (setupStep === "ready" && burners.length === 0) {
+      console.log("[auto-burner] Wallet ready but no burners — creating burner 0");
+      createBurner(0).catch(err => console.error("[auto-burner] Failed:", err));
+    }
+  }, [setupStep, burners.length, createBurner]);
+
   // --- Setup Unlink wallet ---
   const handleSetupWallet = async () => {
     setLoading(true);
