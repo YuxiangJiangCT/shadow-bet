@@ -66,6 +66,12 @@ You (Public Wallet)
 - **Market Creators** — Privacy attracts larger, more honest bets. Whales participate when their positions aren't exposed.
 - **Unlink & Monad Ecosystem** — First privacy-native DeFi application, proving that ZK privacy primitives have real product-market fit beyond simple transfers.
 
+## Screenshots
+
+| Markets | Place Bet | Wallet |
+|---------|-----------|--------|
+| ![Markets](market.png) | ![Bet](bet.png) | ![Wallet](wallet.png) |
+
 ## Tech Stack
 
 | Layer | Technology |
