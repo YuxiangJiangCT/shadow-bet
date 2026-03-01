@@ -250,13 +250,13 @@ function App() {
             </button>
           )}
           <button
-            className={`nav-link ${page === "how" ? "active" : ""}`}
+            className={`nav-link nav-link-secondary ${page === "how" ? "active" : ""}`}
             onClick={() => navigateTo("how")}
           >
             How It Works
           </button>
           <button
-            className={`nav-link ${page === "privacy" ? "active" : ""}`}
+            className={`nav-link nav-link-secondary ${page === "privacy" ? "active" : ""}`}
             onClick={() => navigateTo("privacy")}
           >
             Privacy Proof
