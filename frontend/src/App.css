@@ -914,6 +914,24 @@ body::before {
   color: #ff9500 !important;
 }
 
+.reshield-btn {
+  background: rgba(139, 92, 246, 0.15);
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  color: #a78bfa;
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.reshield-btn:hover {
+  background: rgba(139, 92, 246, 0.25);
+}
+.reshield-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 /* ===== TX STATUS ===== */
 .tx-status {
   margin-top: 12px;

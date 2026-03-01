@@ -625,6 +625,42 @@ export function BetWidget({ provider, account, initialMarket, requestedView, bet
     }
   };
 
+  // --- Re-shield: burner → deposit → privacy pool (privacy-preserving) ---
+  const handleReshield = async () => {
+    if (!burnerAddr || burnerBalance <= 0n) return;
+    setLoading(true);
+    showStatus("Re-shielding burner funds to privacy pool...", 0);
+    try {
+      // Keep a small gas reserve in burner for future txs
+      const gasReserve = ethers.parseEther("0.005");
+      const sweepAmount = burnerBalance > gasReserve ? burnerBalance - gasReserve : burnerBalance;
+      if (sweepAmount <= 0n) {
+        showStatus("Burner balance too low to re-shield.", 5000);
+        setLoading(false);
+        return;
+      }
+
+      // Generate deposit tx with burner as depositor
+      const result = await deposit([{ token: MON_TOKEN, amount: sweepAmount, depositor: burnerAddr }]);
+
+      // Execute deposit from burner (privacy-preserving!)
+      showStatus("Depositing from burner to privacy pool...", 0);
+      const { txHash } = await burnerSend.execute({
+        index: burnerIndex,
+        tx: { to: result.to, data: result.calldata, value: result.value },
+      });
+
+      setLastTxHash(txHash);
+      showStatus("Burner funds re-shielded! You can now unshield to your public wallet.", 8000);
+      await loadBurnerBalance();
+      clearError();
+    } catch (err: any) {
+      showStatus(`Re-shield error: ${parseContractError(err)}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // --- Stepper helper ---
   function getStepperState(m: Market, active: boolean) {
     const steps = [
@@ -986,13 +1022,18 @@ export function BetWidget({ provider, account, initialMarket, requestedView, bet
                 </div>
               )}
 
-              {/* Post-claim success: show burner balance */}
+              {/* Post-claim success: show burner balance + re-shield option */}
               {market.resolved && myBets.some(b => b.marketId === market.id && b.claimed) && burnerAddr && (
                 <div className="claim-success">
                   <p>&#x2705; Winnings claimed to burner</p>
                   <p className="claim-success-balance">
                     &#x1F525; Burner balance: {fmtBal(burnerBalance)} MON
                   </p>
+                  {burnerBalance > ethers.parseEther("0.005") && (
+                    <button className="reshield-btn" onClick={handleReshield} disabled={isLoading} style={{ marginTop: 8 }}>
+                      {isLoading ? <><span className="spinner" />Re-shielding...</> : "Re-shield to Privacy Pool"}
+                    </button>
+                  )}
                 </div>
               )}
             </>
@@ -1023,6 +1064,13 @@ export function BetWidget({ provider, account, initialMarket, requestedView, bet
               <div className="balance-row burner">
                 <span className="balance-label">Burner</span>
                 <span className="balance-value">{fmtBal(burnerBalance)} MON</span>
+                <button
+                  className="reshield-btn"
+                  onClick={handleReshield}
+                  disabled={isLoading}
+                >
+                  {isLoading ? "..." : "Re-shield"}
+                </button>
               </div>
             )}
           </div>
