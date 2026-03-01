@@ -22,7 +22,7 @@ export interface AuditData {
 // provider and contract are created per-call inside withFallback — no module-level instance
 
 const CHUNK_SIZE = 1000; // Monad eth_getLogs limit
-const MAX_CHUNKS = 200; // ~200k blocks ≈ 22 hours of history
+const MAX_CHUNKS = 10;  // ~10k blocks ≈ ~1 hour — enough for hackathon demo, saves 95% RPC calls
 
 export function useOnChainAudit(): AuditData {
   const [events, setEvents] = useState<AuditEvent[]>([]);
