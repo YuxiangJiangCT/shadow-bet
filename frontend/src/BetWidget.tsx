@@ -209,27 +209,22 @@ export function BetWidget({ provider, account, initialMarket, requestedView, bet
     const currentMarkets = marketsRef.current;
     if (burners.length === 0 || currentMarkets.length === 0) { setMyBets([]); return; }
     try {
-      const contract = new ethers.Contract(CONTRACT_ADDRESS, SHADOWBET_ABI, provider);
       const found: MyBet[] = [];
-      // Sequential with small delay to avoid rate limit
       for (const b of burners) {
         for (const m of currentMarkets) {
-          for (let attempt = 0; attempt < 2; attempt++) {
-            try {
-              const bet = await contract.getBet(m.id, b.address);
-              if (bet.amount > 0n) {
-                found.push({ marketId: m.id, burnerAddr: b.address, amount: bet.amount, option: Number(bet.option), claimed: bet.claimed });
-              }
-              break;
-            } catch {
-              if (attempt === 0) await new Promise(r => setTimeout(r, 1500));
+          try {
+            const bet = await withFallback(p =>
+              new ethers.Contract(CONTRACT_ADDRESS, SHADOWBET_ABI, p).getBet(m.id, b.address)
+            );
+            if (bet.amount > 0n) {
+              found.push({ marketId: m.id, burnerAddr: b.address, amount: bet.amount, option: Number(bet.option), claimed: bet.claimed });
             }
-          }
+          } catch { /* skip single bet lookup failure */ }
         }
       }
       setMyBets(found);
     } catch { /* ignore */ }
-  }, [burners, provider]); // markets accessed via ref — no dep loop
+  }, [burners]); // markets via ref, RPC via withFallback — no provider dep needed
 
   // --- Create market (admin) ---
   const handleCreateMarket = async () => {
